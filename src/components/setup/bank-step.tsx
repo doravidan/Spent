@@ -44,18 +44,21 @@ export function BankStep({ onComplete }: BankStepProps) {
   const [filter, setFilter] = useState<"all" | BankKind>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [sub, setSub] = useState<Sub | null>(null);
+  const [sub, setSub] = useState<Sub>("pick");
 
-  const { data: integrations = [], isPending, refetch } = useQuery({
+  const { data: integrations = [], refetch } = useQuery({
     queryKey: ["integrations"],
     queryFn: listIntegrations,
   });
 
-  // Pick the right starting view once we've heard back from the query
+  // Never render an empty setup screen while the integrations query is booting.
+  // Start with the provider picker immediately, then switch to the connected
+  // accounts view only when we actually know accounts exist.
   useEffect(() => {
-    if (isPending || sub != null) return;
-    setSub(integrations.length > 0 ? "ready" : "pick");
-  }, [isPending, integrations.length, sub]);
+    if (sub === "pick" && integrations.length > 0) {
+      setSub("ready");
+    }
+  }, [integrations.length, sub]);
 
   const connectedIds = new Set(integrations.map((i) => i.provider));
   const selected = selectedId
@@ -102,8 +105,6 @@ export function BankStep({ onComplete }: BankStepProps) {
       setSub("pick");
     }
   }
-
-  if (sub == null) return null;
 
   const readyCountLabel =
     integrations.length === 1
