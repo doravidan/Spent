@@ -56,6 +56,7 @@ export function BankStep({ onComplete }: BankStepProps) {
   // accounts view only when we actually know accounts exist.
   useEffect(() => {
     if (sub === "pick" && integrations.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- move from initial picker to connected-account summary once async data arrives.
       setSub("ready");
     }
   }, [integrations.length, sub]);

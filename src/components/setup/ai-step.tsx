@@ -17,7 +17,7 @@ import {
   type PullEvent,
 } from "@/lib/api";
 
-type AIChoice = "claude" | "ollama" | "none";
+type AIChoice = "ollama" | "none";
 
 interface AIStepProps {
   onComplete: () => void;
@@ -33,7 +33,6 @@ interface PullState {
 }
 
 const TINTS = {
-  claude: { bg: "#fad6c0", mid: "#e89968", ink: "#7a4222" },
   ollama: { bg: "#dbedd1", mid: "#a8d18d", ink: "#3e5a2e" },
   none: { bg: "#e6dfd1", mid: "#a89978", ink: "#5b5240" },
 } as const;
@@ -48,17 +47,11 @@ interface ProviderMeta {
 
 const PROVIDERS: ProviderMeta[] = [
   {
-    id: "claude",
-    title: "Claude",
-    tagline: "Anthropic API, fast and accurate",
-    icon: "✦",
-    recommended: true,
-  },
-  {
     id: "ollama",
     title: "Ollama",
     tagline: "Runs locally, free and private",
     icon: "◐",
+    recommended: true,
   },
   {
     id: "none",
@@ -69,9 +62,7 @@ const PROVIDERS: ProviderMeta[] = [
 ];
 
 export function AIStep({ onComplete, onBack }: AIStepProps) {
-  const [choice, setChoice] = useState<AIChoice>("claude");
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
+  const [choice, setChoice] = useState<AIChoice>("none");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("llama3.2:3b");
   const [installedModels, setInstalledModels] = useState<string[]>([]);
@@ -105,9 +96,7 @@ export function AIStep({ onComplete, onBack }: AIStepProps) {
   const modelInstalled = installedModels.includes(ollamaModel);
 
   const canContinue =
-    choice === "none" ||
-    (choice === "claude" && /^sk-ant-/.test(apiKey) && apiKey.length > 25) ||
-    (choice === "ollama" && modelInstalled);
+    choice === "none" || (choice === "ollama" && modelInstalled);
 
   const handlePull = () => {
     setPullError(null);
@@ -149,7 +138,6 @@ export function AIStep({ onComplete, onBack }: AIStepProps) {
     try {
       await saveAIConfig({
         provider: choice,
-        apiKey: choice === "claude" ? apiKey : undefined,
         ollamaUrl: choice === "ollama" ? ollamaUrl : undefined,
         ollamaModel: choice === "ollama" ? ollamaModel : undefined,
       });
@@ -193,14 +181,6 @@ export function AIStep({ onComplete, onBack }: AIStepProps) {
                   className="overflow-hidden"
                 >
                   <div className="pt-1.5">
-                    {p.id === "claude" && (
-                      <ClaudeConfig
-                        apiKey={apiKey}
-                        setApiKey={setApiKey}
-                        showKey={showKey}
-                        setShowKey={setShowKey}
-                      />
-                    )}
                     {p.id === "ollama" && (
                       <OllamaConfig
                         url={ollamaUrl}
@@ -297,56 +277,6 @@ function ProviderRow({
         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
       )}
     </button>
-  );
-}
-
-function ClaudeConfig({
-  apiKey,
-  setApiKey,
-  showKey,
-  setShowKey,
-}: {
-  apiKey: string;
-  setApiKey: (v: string) => void;
-  showKey: boolean;
-  setShowKey: (v: boolean) => void;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border border-border bg-card/60 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor="claude-api-key" className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
-          API key
-        </Label>
-        <a
-          href="https://console.anthropic.com"
-          target="_blank"
-          rel="noreferrer"
-          className="text-[11px] font-medium text-primary hover:underline"
-        >
-          Get a key ↗
-        </a>
-      </div>
-      <div className="relative">
-        <Input
-          id="claude-api-key"
-          type={showKey ? "text" : "password"}
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-ant-api03-..."
-          className="font-mono pr-14"
-        />
-        <button
-          type="button"
-          onClick={() => setShowKey(!showKey)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent"
-        >
-          {showKey ? "hide" : "show"}
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground">
-        Encrypted with AES-256-GCM and stored locally.
-      </p>
-    </div>
   );
 }
 
@@ -475,7 +405,7 @@ function ManualNote() {
     <div className="rounded-xl border border-border bg-card/60 p-4 text-[12px] leading-relaxed text-muted-foreground">
       Spent will leave transactions <span className="text-foreground">uncategorized</span>;
       you can assign categories from the transactions table any time. Switch to
-      Claude or Ollama later in{" "}
+      local Ollama later in{" "}
       <span className="font-bold text-foreground">Settings → AI</span>.
     </div>
   );

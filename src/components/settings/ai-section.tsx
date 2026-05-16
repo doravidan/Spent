@@ -47,7 +47,6 @@ function AIForm({ settings }: { settings: AppSettings }) {
   const [provider, setProvider] = useState<AppSettings["aiProvider"]>(
     settings.aiProvider
   );
-  const [apiKey, setApiKey] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState(settings.ollamaUrl);
   const [ollamaModel, setOllamaModel] = useState(settings.ollamaModel);
 
@@ -55,14 +54,12 @@ function AIForm({ settings }: { settings: AppSettings }) {
     mutationFn: () =>
       saveAIConfig({
         provider,
-        apiKey: provider === "claude" && apiKey ? apiKey : undefined,
         ollamaUrl: provider === "ollama" ? ollamaUrl : undefined,
         ollamaModel: provider === "ollama" ? ollamaModel : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       toast.success("AI settings saved");
-      setApiKey("");
     },
   });
 
@@ -72,14 +69,9 @@ function AIForm({ settings }: { settings: AppSettings }) {
         title="Provider"
         description="Switch any time. Your existing categorizations are kept."
       >
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           {(
             [
-              {
-                id: "claude",
-                title: "Claude (Anthropic)",
-                desc: "Fast and accurate. Paid API. Bring your own API key.",
-              },
               {
                 id: "ollama",
                 title: "Ollama (Local)",
@@ -109,27 +101,6 @@ function AIForm({ settings }: { settings: AppSettings }) {
           ))}
         </div>
       </SettingCard>
-
-      {provider === "claude" && (
-        <SettingCard
-          title="Claude API key"
-          description="Paste your key from console.anthropic.com. It's encrypted at rest with AES-256-GCM."
-        >
-          <div className="space-y-2">
-            <Label htmlFor="claude-key">API key</Label>
-            <Input
-              id="claude-key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to keep your existing key.
-            </p>
-          </div>
-        </SettingCard>
-      )}
 
       {provider === "ollama" && (
         <SettingCard

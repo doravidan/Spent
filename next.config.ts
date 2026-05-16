@@ -12,18 +12,18 @@ const SECURITY_HEADERS = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), payment=()",
   },
-  // CSP for a local-only app: only same-origin scripts/styles + Google
-  // fonts + the favicon API. Inline styles allowed for shadcn/Tailwind.
-  // 'unsafe-inline' on scripts is necessary because Next dev injects them.
+  // CSP for a local-only app: only same-origin scripts/styles and local
+  // Ollama. Inline styles are required by shadcn/Tailwind. No remote AI,
+  // favicon, analytics, or font endpoints are allowed by default.
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://www.google.com",
-      "connect-src 'self' https://api.anthropic.com http://localhost:11434 ws://127.0.0.1:* ws://localhost:*",
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self' data:",
+      "img-src 'self' data: blob:",
+      "connect-src 'self' http://localhost:11434 http://127.0.0.1:11434 ws://127.0.0.1:* ws://localhost:*",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

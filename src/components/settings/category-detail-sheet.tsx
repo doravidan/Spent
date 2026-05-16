@@ -169,6 +169,7 @@ function BudgetSection({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep the edit field aligned when the selected category changes.
     if (data) setAmount(String(Math.round(data.budget)));
   }, [data]);
 
@@ -325,6 +326,7 @@ function DescriptionSection({ category }: { category: Category }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(category.description ?? "");
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the textarea when opening a different category.
     setValue(category.description ?? "");
   }, [category.description]);
 

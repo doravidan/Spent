@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
   Bot,
   BriefcaseBusiness,
-  CheckCircle2,
   CreditCard,
   FileText,
   Gauge,

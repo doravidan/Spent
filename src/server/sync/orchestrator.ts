@@ -79,8 +79,8 @@ export function friendlyAIError(err: unknown, modelName: string): string {
   if (/ECONNREFUSED|fetch failed/i.test(msg)) {
     return "Ollama is not reachable. Make sure it's installed and that no firewall is blocking port 11434.";
   }
-  if (/Anthropic|api[_-]?key|401|403/i.test(msg)) {
-    return "Claude API request was rejected. Check your API key in settings.";
+  if (/401|403/i.test(msg)) {
+    return "AI request was rejected. Check your local AI settings.";
   }
   return `AI categorization failed: ${msg}`;
 }

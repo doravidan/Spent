@@ -33,6 +33,7 @@ export function Dashboard() {
 
   // Hydrate the persisted view mode after mount to avoid SSR mismatch.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberately hydrate client-only localStorage after mount.
     setViewMode(readViewMode());
   }, []);
 

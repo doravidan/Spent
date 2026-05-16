@@ -113,8 +113,7 @@ export function testBankConnection(provider: string) {
 }
 
 export function saveAIConfig(config: {
-  provider: "claude" | "ollama" | "none";
-  apiKey?: string;
+  provider: "ollama" | "none";
   ollamaUrl?: string;
   ollamaModel?: string;
 }) {
