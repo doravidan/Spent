@@ -151,6 +151,22 @@ const FRIENDLY_ERRORS: Record<string, string> = {
     "The scraper failed unexpectedly. Run with 'Show browser during sync' enabled to see what's happening.",
 };
 
+function providerSpecificFriendlyError(
+  provider: BankProvider,
+  errorType: string,
+  detail: string
+): string | null {
+  if (
+    (provider === "discount" || provider === "mercantile") &&
+    errorType === "GENERAL_ERROR" &&
+    /UNKNOWN_ERROR/i.test(detail)
+  ) {
+    return `${provider === "mercantile" ? "Mercantile Discount" : "Bank Discount"} could not complete login. Check the ID, password, and especially the User Identification Code field — it must be the extra login code from the bank login form, not the account number. If the bank shows SMS/2FA or another challenge, enable 'This account requires 2FA' for this integration and sync again.`;
+  }
+
+  return null;
+}
+
 async function runScrape(
   provider: BankProvider,
   credentials: Record<string, string>,
@@ -211,12 +227,19 @@ async function runScrape(
     const detail = result.errorMessage
       ? sanitizeError(new Error(result.errorMessage))
       : errorType;
+    const providerSpecific = providerSpecificFriendlyError(
+      provider,
+      errorType,
+      detail
+    );
     return {
       success: false,
       accounts: [],
-      errorMessage: friendly
-        ? `${friendly} (${detail})`
-        : `Scraping failed: ${detail}`,
+      errorMessage:
+        providerSpecific ??
+        (friendly
+          ? `${friendly} (${detail})`
+          : `Scraping failed: ${detail}`),
     };
   }
 
