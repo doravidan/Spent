@@ -8,6 +8,7 @@ import {
   ArrowLeftRight,
   Settings as SettingsIcon,
   Star,
+  Crown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,12 @@ import {
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
 const NAV = [
+  {
+    href: "/ceo",
+    label: "CEO Live",
+    Icon: Crown,
+    match: (p: string) => p.startsWith("/ceo"),
+  },
   {
     href: "/",
     label: "Home",

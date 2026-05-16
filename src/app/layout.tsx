@@ -23,8 +23,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spent",
-  description: "Personal finance tracker with AI-powered categorization",
+  title: "Dor Finance Live",
+  description: "Local-first live Israeli bank/card finance command center for Dor",
 };
 
 export default function RootLayout({
