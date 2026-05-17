@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import { CompanyTypes, SCRAPERS, createScraper } from "israeli-bank-scrapers";
+import { normalizeOneZeroPhoneNumber } from "../src/lib/credentials.ts";
 
 const expectedProviders = [
   "isracard",
@@ -117,6 +118,20 @@ for (const provider of ["discount", "mercantile"]) {
     "User Identification Code must accept non-numeric characters": (field) =>
       !field.includes("numeric: true"),
   });
+}
+
+const oneZeroPhoneCases = new Map([
+  ["050-123-4567", "+972501234567"],
+  ["050 123 4567", "+972501234567"],
+  ["972501234567", "+972501234567"],
+  ["00972501234567", "+972501234567"],
+  ["+972501234567", "+972501234567"],
+]);
+for (const [input, expected] of oneZeroPhoneCases) {
+  const actual = normalizeOneZeroPhoneNumber(input);
+  if (actual !== expected) {
+    failures.push(`oneZero.phoneNumber: ${input} normalized to ${actual}, expected ${expected}`);
+  }
 }
 
 if (failures.length > 0) {

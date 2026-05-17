@@ -22,6 +22,7 @@ import {
   testBankConnection,
   updateIntegrationSettings,
 } from "@/lib/api";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { TwoFactorSection } from "@/components/setup/two-factor-section";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
@@ -174,6 +175,7 @@ function CredentialsForm({
 
   const allValid = info.credentialFields.every((f) => {
     const v = credentials[f.key]?.trim() ?? "";
+    if (isEdit && !v) return true;
     if (!v) return false;
     if (f.exactLength != null && v.length !== f.exactLength) return false;
     return true;
@@ -266,6 +268,13 @@ function CredentialsForm({
                 if (field.exactLength) next = next.slice(0, field.exactLength);
                 if (field.maxLength) next = next.slice(0, field.maxLength);
                 setCredentials((prev) => ({ ...prev, [field.key]: next }));
+              }}
+              onBlur={() => {
+                if (info.id !== "oneZero" || field.key !== "phoneNumber") return;
+                setCredentials((prev) => ({
+                  ...prev,
+                  [field.key]: normalizeOneZeroPhoneNumber(prev[field.key] ?? ""),
+                }));
               }}
               placeholder={placeholder}
               aria-invalid={tooShort || undefined}

@@ -685,7 +685,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
         label: "Phone number",
         type: "tel",
         placeholder: "+972501234567",
-        hint: "Where the SMS one-time code will be sent. International format including the country code.",
+        hint: "Where the SMS one-time code will be sent. You can enter 05...; Spent will save it as +972... for One Zero.",
       },
     ],
     enabled: true,

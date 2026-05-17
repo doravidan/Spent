@@ -4,6 +4,7 @@ import {
   saveBankCredentials,
 } from "@/server/db/queries/bank-credentials";
 import { BANK_PROVIDERS } from "@/lib/types";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { getWorkspaceIdFromRequest } from "@/server/lib/workspace-context";
 
 export async function POST(request: Request) {
@@ -21,15 +22,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // If any password-type field is blank, keep the existing value.
-  // Lets users update non-secret fields without retyping their password.
+  // The credentials GET endpoint intentionally returns metadata only, never
+  // decrypted secrets. In edit mode the browser can therefore submit only the
+  // fields the user wants to replace; blank fields keep the existing encrypted
+  // value instead of wiping it.
   const info = BANK_PROVIDERS.find((b) => b.id === body.provider);
-  const passwordKeys =
-    info?.credentialFields.filter((f) => f.type === "password").map((f) => f.key) ?? [];
+  const credentialKeys = info?.credentialFields.map((f) => f.key) ?? [];
   const existing = getBankCredentials(workspaceId, body.provider);
 
   const merged: Record<string, string> = { ...body.credentials };
-  for (const key of passwordKeys) {
+  for (const key of credentialKeys) {
     if (!merged[key] || merged[key].trim() === "") {
       if (existing && existing[key]) {
         merged[key] = existing[key];
@@ -37,8 +39,8 @@ export async function POST(request: Request) {
     }
   }
 
-  // Reject if we still don't have a value for required password fields
-  for (const key of passwordKeys) {
+  // Reject if we still don't have a value for required credential fields.
+  for (const key of credentialKeys) {
     if (!merged[key]) {
       return NextResponse.json(
         { success: false, message: `Missing required field: ${key}` },
@@ -52,6 +54,10 @@ export async function POST(request: Request) {
   // the form never sends it back.
   if (existing?.otpLongTermToken && !merged.otpLongTermToken) {
     merged.otpLongTermToken = existing.otpLongTermToken;
+  }
+
+  if (body.provider === "oneZero" && typeof merged.phoneNumber === "string") {
+    merged.phoneNumber = normalizeOneZeroPhoneNumber(merged.phoneNumber);
   }
 
   saveBankCredentials(workspaceId, body.provider, merged, {

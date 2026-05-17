@@ -33,6 +33,7 @@ import {
 } from "@/server/scrapers/one-zero";
 import { createAIProvider } from "@/server/ai/factory";
 import { ensureOllamaRunning } from "@/server/ai/ollama-manager";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { toLocalISODate } from "@/server/lib/date-utils";
 import { listAllWorkspaceIds } from "@/server/lib/workspace-context";
 import { getWorkspace } from "@/server/db/queries/workspaces";
@@ -132,12 +133,13 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
         errorMessage: "Email and password are required for One Zero.",
       };
     }
-    if (!credentials.phoneNumber) {
+    const phoneNumber = normalizeOneZeroPhoneNumber(credentials.phoneNumber ?? "");
+    if (!phoneNumber) {
       return {
         success: false,
         accounts: [],
         errorMessage:
-          "Phone number is required to receive the One Zero 2FA code.",
+          "Phone number is required to receive the One Zero 2FA code. Use Israeli local format (05...) or international format (+972...).",
       };
     }
 
@@ -146,7 +148,7 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
     const result = await scrapeOneZeroFirstTime({
       email: credentials.email,
       password: credentials.password,
-      phoneNumber: credentials.phoneNumber,
+      phoneNumber,
       startDate,
       awaitOtp: async () => {
         send("provider-2fa-needed", {
