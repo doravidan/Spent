@@ -101,6 +101,40 @@ function monthFromDate(date: string): string {
   return date.slice(0, 7);
 }
 
+function parseTransactionDate(date: string): Date {
+  return new Date(date.includes("T") ? date : `${date}T00:00:00`);
+}
+
+function addOneMonth(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const next = new Date(Date.UTC(year, monthNumber, 1));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function isPersonalSalary(tx: TxRow): boolean {
+  const text = `${tx.description} ${tx.memo ?? ""}`.toLowerCase();
+  return (
+    tx.charged_amount > 0 &&
+    scopeForProvider(tx.provider) === "personal" &&
+    includesAny(text, ["משכורת", "salary", "hsbc", "בי\"ח", "בית חולים", "לניאד"])
+  );
+}
+
+function accountingMonthForTx(tx: TxRow): string {
+  const month = monthFromDate(tx.date);
+  const day = parseTransactionDate(tx.date).getUTCDate();
+
+  // Dor has two private salaries. One of them often lands just before the 1st,
+  // so salary deposits from the last week of the month belong to the next
+  // household month. This prevents showing two salaries in one month and zero
+  // salary in the following month.
+  if (isPersonalSalary(tx) && day >= 25) {
+    return addOneMonth(month);
+  }
+
+  return month;
+}
+
 function redactedAccount(account: string): string {
   const suffix = String(account ?? "").replace(/\D/g, "").slice(-4);
   return suffix ? `…${suffix}` : "…";
@@ -164,19 +198,17 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
     `SELECT MIN(date) as fromDate, MAX(date) as toDate, COUNT(*) as count
      FROM transactions WHERE workspace_id = ? AND status = 'completed'`
   ).get(workspaceId) as { fromDate: string | null; toDate: string | null; count: number };
-  const month = coverage.toDate ? monthFromDate(coverage.toDate) : new Date().toISOString().slice(0, 7);
-  const rows = db.prepare(
-    `SELECT id, provider, account_number, date, charged_amount, description, memo
-     FROM transactions
-     WHERE workspace_id = ? AND status = 'completed' AND substr(date, 1, 7) = ?
-     ORDER BY date DESC, id DESC`
-  ).all(workspaceId, month) as TxRow[];
   const allRows = db.prepare(
     `SELECT id, provider, account_number, date, charged_amount, description, memo
      FROM transactions
      WHERE workspace_id = ? AND status = 'completed'
      ORDER BY date DESC, id DESC`
   ).all(workspaceId) as TxRow[];
+  const accountingMonths = allRows.map(accountingMonthForTx).sort();
+  const month = accountingMonths.length > 0
+    ? accountingMonths[accountingMonths.length - 1]
+    : new Date().toISOString().slice(0, 7);
+  const rows = allRows.filter((tx) => accountingMonthForTx(tx) === month);
 
   const accountsMap = new Map<string, AccountSummary>();
   for (const tx of allRows) {
@@ -216,7 +248,7 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
 
   const monthlyMap = new Map<string, MonthlyScopeSummary>();
   for (const tx of allRows) {
-    const m = monthFromDate(tx.date);
+    const m = accountingMonthForTx(tx);
     const s = monthlyMap.get(m) ?? { month: m, businessIncome: 0, businessExpense: 0, personalIncome: 0, personalExpense: 0, investmentsAndFx: 0, cardSettlements: 0 };
     const c = classify(tx);
     if (c.name.includes("כרטיסים")) s.cardSettlements += Math.abs(tx.charged_amount);
@@ -270,6 +302,7 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
 
   const dataQuality: DataQualityItem[] = [
     { severity: "ok", text: "One Zero מסומן כעסקי; Mercantile מסומן כפרטי לפי ההנחיה שלך." },
+    { severity: "ok", text: "משכורת פרטית שנכנסת בשבוע האחרון של החודש נספרת לחודש הבא, כדי שלא יופיעו שתי משכורות באותו חודש." },
     { severity: cardSettlements > 0 ? "action" : "ok", text: cardSettlements > 0 ? "חיובי כרטיסים עדיין מרוכזים — צריך פירוט כרטיסים/חשבוניות כדי לדעת ספקים אמיתיים." : "אין חיובי כרטיסים מרוכזים בחודש הנבחר." },
     { severity: investmentsAndFx > 0 ? "ok" : "warning", text: investmentsAndFx > 0 ? "פעילות מניות/מט״ח מופרדת מהוצאות רגילות." : "לא זוהתה פעילות מניות/מט״ח בחודש הנבחר." },
   ];

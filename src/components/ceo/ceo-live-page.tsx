@@ -79,7 +79,7 @@ export function CeoLivePage() {
               </p>
               {data && (
                 <p className="mt-3 text-sm text-[#b8ad99]">
-                  חודש מוצג: {data.monthLabel} · כיסוי נתונים: {data.coverage.transactionCount} תנועות, {data.coverage.from?.slice(0, 10)}–{data.coverage.to?.slice(0, 10)}
+                  חודש חשבונאי: {data.monthLabel} · כיסוי נתונים: {data.coverage.transactionCount} תנועות, {data.coverage.from?.slice(0, 10)}–{data.coverage.to?.slice(0, 10)}
                 </p>
               )}
             </div>
