@@ -6,32 +6,29 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
-  ArrowUpRight,
   Bot,
   BriefcaseBusiness,
   CreditCard,
   FileText,
   Gauge,
   Landmark,
-  Link2,
-  Mail,
   PiggyBank,
-  ReceiptText,
   RefreshCw,
   ShieldCheck,
   Sparkles,
-  Target,
+  TrendingUp,
   WalletCards,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
-  getHome,
+  getCeoFinance,
   getSetupStatus,
   listIntegrations,
   startSync,
+  type CeoFinancePayload,
   type SyncProgressEvent,
 } from "@/lib/api";
-import type { HomePayload, Integration, SetupStatus } from "@/lib/types";
+import type { Integration, SetupStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -40,37 +37,27 @@ const currency = new Intl.NumberFormat("he-IL", {
   currency: "ILS",
   maximumFractionDigits: 0,
 });
-const percent = new Intl.NumberFormat("he-IL", {
-  style: "percent",
-  maximumFractionDigits: 0,
-});
 
-const businessUnits = [
-  { name: "EdenOS", hint: "AI ops / runtime / secure gateway" },
-  { name: "TaskClo", hint: "iOS + web product pipeline" },
-  { name: "Style My Look", hint: "fashion AI / TestFlight / App Store" },
-  { name: "TripWeaver", hint: "travel planning product" },
-  { name: "GEM", hint: "media / player / experiments" },
-  { name: "Personal", hint: "home, family, private cashflow" },
-];
+function money(value: number) {
+  const abs = Math.abs(value);
+  const formatted = currency.format(abs);
+  return value < 0 ? `-${formatted}` : formatted;
+}
+
+const scopeLabel = { business: "עסקי", personal: "פרטי", all: "כללי" } as const;
 
 export function CeoLivePage() {
   const queryClient = useQueryClient();
-  const home = useQuery({ queryKey: ["home"], queryFn: getHome, refetchInterval: 60_000 });
-  const integrations = useQuery({
-    queryKey: ["integrations"],
-    queryFn: listIntegrations,
-    refetchInterval: 60_000,
-  });
+  const finance = useQuery({ queryKey: ["ceo-finance"], queryFn: getCeoFinance, refetchInterval: 60_000 });
+  const integrations = useQuery({ queryKey: ["integrations"], queryFn: listIntegrations, refetchInterval: 60_000 });
   const setup = useQuery({ queryKey: ["setup-status"], queryFn: getSetupStatus });
-
-  const data = home.data;
-  const model = useMemo(() => buildModel(data, integrations.data, setup.data), [data, integrations.data, setup.data]);
+  const data = finance.data;
+  const headline = useMemo(() => buildHeadline(data), [data]);
 
   const handleSync = () => {
     const sync = startSync(undefined, (event: SyncProgressEvent) => {
       if (["complete", "error", "provider-done"].includes(event.type)) {
-        queryClient.invalidateQueries({ queryKey: ["home"] });
+        queryClient.invalidateQueries({ queryKey: ["ceo-finance"] });
         queryClient.invalidateQueries({ queryKey: ["integrations"] });
       }
     });
@@ -84,93 +71,85 @@ export function CeoLivePage() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-sm text-emerald-100">
-                <ShieldCheck size={16} /> Live local bank/card sync · encrypted SQLite · Hermes CEO layer
+                <ShieldCheck size={16} /> Live local finance · One Zero עסקי · Mercantile פרטי
               </div>
-              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">כסף לייב — לא אקסל</h1>
+              <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">CEO Finance — מה לעשות עם הכסף החודש?</h1>
               <p className="mt-4 max-w-3xl text-lg leading-8 text-[#d9cfb8]">
-                זה פורק אמיתי של Spent: ההתחברות לבנקים ולחברות האשראי נשארת מהמנוע המקורי, והמסך הזה יושב מעל הנתונים החיים כדי להראות תזרים, חריגות, חשבוניות חסרות והחלטת CEO יומית.
+                {headline}
               </p>
+              {data && (
+                <p className="mt-3 text-sm text-[#b8ad99]">
+                  חודש מוצג: {data.monthLabel} · כיסוי נתונים: {data.coverage.transactionCount} תנועות, {data.coverage.from?.slice(0, 10)}–{data.coverage.to?.slice(0, 10)}
+                </p>
+              )}
             </div>
             <div className="rounded-3xl border border-white/10 bg-black/25 p-5 text-sm text-[#d9cfb8]">
-              <div className="mb-3 flex items-center gap-2 text-[#f7f0df]"><Bot size={18}/> מצב Hermes</div>
-              <p>{model.hasBank ? "מחובר לנתוני Spent. Hermes יכול להפוך חריגות למשימות והחלטות." : "עדיין אין חשבון מחובר. חבר בנק/אשראי דרך Setup כדי לראות נתוני אמת."}</p>
+              <div className="mb-3 flex items-center gap-2 text-[#f7f0df]"><Bot size={18}/> פעולה</div>
+              <p>{data ? "הנתונים חיים מה־SQLite המקומי. הכרטיסים המרוכזים ומניות/מט״ח מופרדים כדי שלא יבלבלו את התזרים." : "טוען נתונים חיים..."}</p>
               <div className="mt-4 flex gap-2">
-                <Link href="/setup" className="inline-flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-medium text-secondary-foreground hover:bg-secondary/80">חיבור חשבון</Link>
+                <Link href="/settings/bank" className="inline-flex h-8 items-center justify-center rounded-md bg-secondary px-3 text-xs font-medium text-secondary-foreground hover:bg-secondary/80">חיבורים</Link>
                 <Button size="sm" onClick={handleSync}><RefreshCw className="ml-2 h-4 w-4"/>סנכרון עכשיו</Button>
               </div>
             </div>
           </div>
         </section>
 
-        {!model.hasBank && <SetupCallout setup={setup.data} />}
+        {!setup.data?.hasBankCredentials && <SetupCallout setup={setup.data} />}
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Kpi label="הכנסות החודש" value={model.income} icon={ArrowUpRight} tone="good" detail="מגיע מהבנק אחרי חיבור" />
-          <Kpi label="הוצאות החודש" value={-model.expenses} icon={CreditCard} tone="warn" detail="לא כולל transfers פנימיים" />
-          <Kpi label="נטו חי" value={model.net} icon={PiggyBank} tone={model.net >= 0 ? "good" : "bad"} detail="הכנסות פחות הוצאות" />
-          <Kpi label="דורש טיפול" valueText={String(model.attention)} icon={ReceiptText} tone={model.attention > 0 ? "bad" : "good"} detail="לא מקוטלג / confidence נמוך / flagged" />
+          <Kpi label="הכנסה עסקית" value={data?.totals.businessIncome ?? 0} icon={BriefcaseBusiness} tone="good" detail="One Zero + הכנסות עסקיות מזוהות" />
+          <Kpi label="הוצאה עסקית" value={data?.totals.businessExpense ?? 0} icon={CreditCard} tone="warn" detail="כולל חיובי כרטיס עסקיים מרוכזים" />
+          <Kpi label="נטו פרטי" value={data?.totals.personalNet ?? 0} icon={PiggyBank} tone={(data?.totals.personalNet ?? 0) >= 0 ? "good" : "bad"} detail="Mercantile: הכנסות פחות הוצאות פרטיות" />
+          <Kpi label="מניות / מט״ח בנפרד" value={data?.totals.investmentsAndFx ?? 0} icon={TrendingUp} tone="asset" detail="לא נספר כהוצאה שוטפת" />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
-          <Card title="סיפור החודש" icon={Gauge}>
-            <div className="grid gap-4 md:grid-cols-3">
-              <Metric label="עבר מהחודש" value={percent.format(model.elapsed / 100)} note="משמש רק להוצאות גמישות" />
-              <Metric label="תקציב חודשי" value={currency.format(model.budget)} note={model.budget > 0 ? "מוגדר ב-Spent" : "עדיין לא הוגדר"} />
-              <Metric label="תחזית סוף חודש" value={currency.format(model.projectedExpense)} note="מודל ראשוני: הוצאות קיימות + קצב גמיש" />
-            </div>
-            <DecisionCard model={model} />
-          </Card>
-
-          <Card title="חיבורי בנקים ואשראי" icon={Link2}>
+        <section className="grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
+          <Card title="Decision #1 — איפה להתחיל לחסוך" icon={Sparkles}>
             <div className="space-y-3">
-              {(integrations.data?.length ? integrations.data : []).map((item) => <ConnectionRow key={item.provider} item={item} />)}
-              {!integrations.data?.length && (
-                <div className="rounded-3xl border border-dashed border-white/20 bg-white/[0.03] p-5 text-[#d9cfb8]">
-                  אין עדיין חיבורים. המנוע תומך בבנקים/אשראי ישראליים דרך `israeli-bank-scrapers` — חבר דרך Setup, לא דרך צ׳אט.
+              {(data?.opportunities ?? []).map((o) => (
+                <div key={o.title} className="rounded-3xl bg-[#f2d28b]/10 p-5">
+                  <div className="mb-1 flex items-center justify-between gap-3 text-[#f2d28b]"><span>{o.title}</span><Badge variant="secondary">{scopeLabel[o.scope]}</Badge></div>
+                  <p className="leading-7 text-[#f7f0df]">{o.detail}</p>
+                  {o.monthlyImpact > 0 && <div className="mt-3 text-sm text-emerald-100">פוטנציאל ריאלי: {money(o.monthlyImpact)} לחודש / {money(o.annualImpact)} לשנה</div>}
                 </div>
-              )}
+              ))}
+              {!data?.opportunities?.length && <Empty text="אין עדיין מספיק נתונים להחלטה." />}
             </div>
           </Card>
-        </section>
 
-        <section className="grid gap-5 xl:grid-cols-3">
-          <Card title="חשבוניות מול חיובים" icon={FileText} compact>
-            <p className="text-[#d9cfb8]">השלב הבא: חיבור מייל/חשבוניות PDF והתאמה אוטומטית מול חיובי אשראי לפי סכום, תאריך, ספק ומע״מ.</p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-amber-100"><Mail size={16}/> מוכן לסקופ הבא: Gmail/IMAP read-only.</div>
-          </Card>
-          <Card title="יחידות עסקיות" icon={BriefcaseBusiness} compact>
-            <div className="grid gap-2">
-              {businessUnits.map((unit) => <div key={unit.name} className="rounded-2xl bg-white/[0.04] p-3"><div className="font-medium">{unit.name}</div><div className="text-sm text-[#b8ad99]">{unit.hint}</div></div>)}
+          <Card title="חשבונות והפרדה עסקי/פרטי" icon={Landmark}>
+            <div className="space-y-3">
+              {(data?.accounts ?? []).map((a) => <AccountRow key={`${a.provider}-${a.accountLabel}`} item={a} />)}
             </div>
-          </Card>
-          <Card title="Paperclip / CEO loop" icon={Target} compact>
-            <ol className="space-y-3 text-[#d9cfb8]">
-              <li>1. סנכרון בנק/אשראי מקומי.</li>
-              <li>2. זיהוי חריגה/חשבונית חסרה.</li>
-              <li>3. Hermes פותח משימה ב-Paperclip.</li>
-              <li>4. דיווח רק על שינוי מצב או החלטה.</li>
-            </ol>
           </Card>
         </section>
 
         <section className="grid gap-5 xl:grid-cols-2">
-          <Card title="Top merchants live" icon={WalletCards}>
+          <Card title="פירוק החודש לפי קטגוריות חכמות" icon={Gauge}>
             <div className="space-y-3">
-              {data?.topMerchants?.length ? data.topMerchants.map((m) => (
-                <div key={m.name} className="flex items-center justify-between rounded-2xl bg-white/[0.04] p-3">
-                  <span>{m.name}</span><span dir="ltr">{currency.format(m.total)}</span>
-                </div>
-              )) : <Empty text="יופיע אחרי סנכרון ראשון." />}
+              {(data?.buckets ?? []).slice(0, 12).map((b) => <BucketRow key={`${b.scope}-${b.kind}-${b.name}`} bucket={b} />)}
             </div>
           </Card>
-          <Card title="תנועות אחרונות" icon={Activity}>
+          <Card title="איכות נתונים ומה חסר" icon={AlertTriangle}>
             <div className="space-y-3">
-              {data?.recentTransactions?.length ? data.recentTransactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between gap-4 rounded-2xl bg-white/[0.04] p-3">
-                  <div><div className="font-medium">{tx.description}</div><div className="text-sm text-[#b8ad99]">{tx.date} · {tx.categoryName ?? "לא מקוטלג"}</div></div>
-                  <span dir="ltr" className={tx.kind === "income" ? "text-emerald-200" : "text-[#f7f0df]"}>{currency.format(tx.chargedAmount)}</span>
-                </div>
-              )) : <Empty text="אין תנועות עדיין — חבר חשבון והרץ Sync." />}
+              {(data?.dataQuality ?? []).map((q) => <QualityRow key={q.text} item={q} />)}
+              <div className="rounded-2xl bg-white/[0.04] p-4 text-sm leading-7 text-[#d9cfb8]">
+                <FileText className="mb-2 h-5 w-5 text-[#f2d28b]" />
+                כדי לענות “על מה הלך כל דבר” ברמת ספק, צריך את פירוט הכרטיסים/חשבוניות. כרגע הבנק מציג חלק מהכסף כחיוב כרטיס מרוכז ולכן הוא מסומן כ־“פירוט חסר”.
+              </div>
+            </div>
+          </Card>
+        </section>
+
+        <section className="grid gap-5 xl:grid-cols-2">
+          <Card title="מגמת חודשים — עסקי/פרטי/מניות" icon={Activity}>
+            <div className="space-y-2">
+              {(data?.monthly ?? []).map((m) => <MonthRow key={String(m.month)} month={m} />)}
+            </div>
+          </Card>
+          <Card title="חיבורי בנקים ואשראי" icon={WalletCards}>
+            <div className="space-y-3">
+              {(integrations.data ?? []).map((item) => <ConnectionRow key={item.provider} item={item} />)}
             </div>
           </Card>
         </section>
@@ -179,15 +158,13 @@ export function CeoLivePage() {
   );
 }
 
-function buildModel(data?: HomePayload, integrations?: Integration[], setup?: SetupStatus) {
-  const income = data?.cashFlow?.income ?? 0;
-  const expenses = data?.cashFlow?.expenses ?? 0;
-  const net = data?.cashFlow?.net ?? 0;
-  const budget = data?.thisMonth?.budget ?? 0;
-  const elapsed = data?.thisMonth?.timeElapsedPercent ?? 0;
-  const attention = (data?.needsAttention?.uncategorized ?? 0) + (data?.needsAttention?.lowConfidence ?? 0) + (data?.needsAttention?.flagged ?? 0);
-  const projectedExpense = elapsed > 0 ? Math.round(expenses / Math.max(elapsed / 100, 0.1)) : expenses;
-  return { income, expenses, net, budget, elapsed, attention, projectedExpense, hasBank: Boolean(setup?.hasBankCredentials || integrations?.length) };
+function buildHeadline(data?: CeoFinancePayload) {
+  if (!data) return "טוען את הנתונים החיים מהחשבונות.";
+  const t = data.totals;
+  if (t.cardSettlements > 0) {
+    return `החודש יש ${money(t.cardSettlements)} בחיובי כרטיסים מרוכזים שצריך לפרק, ו-${money(t.investmentsAndFx)} בפעילות מניות/מט״ח שמופרדת מהתזרים. הנטו העסקי הוא ${money(t.businessNet)}, והנטו הפרטי הוא ${money(t.personalNet)}.`;
+  }
+  return `הנטו העסקי הוא ${money(t.businessNet)}, הנטו הפרטי הוא ${money(t.personalNet)}, ופעילות ההשקעות מופרדת כדי לא לעוות את החודש.`;
 }
 
 function SetupCallout({ setup }: { setup?: SetupStatus }) {
@@ -196,44 +173,45 @@ function SetupCallout({ setup }: { setup?: SetupStatus }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="mb-1 flex items-center gap-2 text-lg font-semibold"><AlertTriangle size={20}/> צריך חיבור חשבון אמיתי</div>
-          <p className="text-amber-100/90">לא שולחים סיסמאות בצ׳אט. פותחים Setup מקומית, מזינים credentials במחשב שלך, והם נשמרים מוצפנים.</p>
+          <p className="text-amber-100/90">לא שולחים סיסמאות בצ׳אט. מחברים בנק/אשראי מקומית, והפרטים נשמרים מוצפנים.</p>
         </div>
-        <Link href="/setup" className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">פתח Setup</Link>
+        <Link href="/settings/bank" className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">פתח חיבורים</Link>
       </div>
       {setup && <div className="mt-3 text-sm text-amber-100/80">AI provider: {setup.hasAIProvider ? "מחובר" : "לא מחובר"}</div>}
     </section>
   );
 }
 
-function DecisionCard({ model }: { model: ReturnType<typeof buildModel> }) {
-  const overBudget = model.budget > 0 && model.projectedExpense > model.budget;
-  const gap = Math.max(0, model.projectedExpense - model.budget);
-  return (
-    <div className="mt-6 rounded-3xl bg-[#f2d28b]/10 p-5">
-      <div className="mb-2 flex items-center gap-2 text-[#f2d28b]"><Sparkles size={18}/> Decision #1</div>
-      <p className="text-xl font-medium">
-        {!model.hasBank ? "חבר חשבון אחד כדי לקבל החלטת CEO אמיתית לפי תנועות חיות." : overBudget ? `צריך להוריד ${currency.format(gap)} מהוצאות גמישות כדי לסיים במסגרת.` : "כרגע אין חריגה צפויה מהתקציב — המשימה היא להשלים קטגוריזציה וחשבוניות."}
-      </p>
-    </div>
-  );
+function Kpi({ label, value, detail, icon: Icon, tone }: { label: string; value: number; detail: string; icon: LucideIcon; tone: "good" | "warn" | "bad" | "asset" }) {
+  const colors = tone === "good" ? "text-emerald-200 bg-emerald-300/10" : tone === "bad" ? "text-red-200 bg-red-300/10" : tone === "asset" ? "text-sky-200 bg-sky-300/10" : "text-amber-200 bg-amber-300/10";
+  return <div className="rounded-3xl border border-white/10 bg-[#111922] p-5 shadow-xl"><div className={`mb-4 inline-flex rounded-2xl p-3 ${colors}`}><Icon size={22}/></div><div className="text-sm text-[#b8ad99]">{label}</div><div dir="ltr" className="mt-2 text-right text-3xl font-semibold">{money(value)}</div><div className="mt-2 text-sm text-[#d9cfb8]">{detail}</div></div>;
 }
 
-function Kpi({ label, value, valueText, detail, icon: Icon, tone }: { label: string; value?: number; valueText?: string; detail: string; icon: LucideIcon; tone: "good" | "warn" | "bad" }) {
-  const colors = tone === "good" ? "text-emerald-200 bg-emerald-300/10" : tone === "bad" ? "text-red-200 bg-red-300/10" : "text-amber-200 bg-amber-300/10";
-  return <div className="rounded-3xl border border-white/10 bg-[#111922] p-5 shadow-xl"><div className={`mb-4 inline-flex rounded-2xl p-3 ${colors}`}><Icon size={22}/></div><div className="text-sm text-[#b8ad99]">{label}</div><div dir="ltr" className="mt-2 text-right text-3xl font-semibold">{valueText ?? currency.format(value ?? 0)}</div><div className="mt-2 text-sm text-[#d9cfb8]">{detail}</div></div>;
+function Card({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: React.ReactNode }) {
+  return <section className="rounded-[2rem] border border-white/10 bg-[#111922] p-6 shadow-xl"><h2 className="mb-5 flex items-center gap-2 text-2xl font-semibold"><Icon size={22}/>{title}</h2>{children}</section>;
 }
 
-function Card({ title, icon: Icon, children, compact = false }: { title: string; icon: LucideIcon; children: React.ReactNode; compact?: boolean }) {
-  return <section className={`rounded-[2rem] border border-white/10 bg-[#111922] shadow-xl ${compact ? "p-5" : "p-6"}`}><h2 className="mb-5 flex items-center gap-2 text-2xl font-semibold"><Icon size={22}/>{title}</h2>{children}</section>;
+function AccountRow({ item }: { item: CeoFinancePayload["accounts"][number] }) {
+  return <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><div className="flex items-center justify-between gap-3"><div className="font-medium">{item.providerName} {item.accountLabel}</div><Badge variant={item.scope === "business" ? "default" : "secondary"}>{scopeLabel[item.scope]}</Badge></div><div className="mt-2 grid gap-2 text-sm text-[#d9cfb8] md:grid-cols-3"><span>הכנסות: {money(item.income)}</span><span>הוצאות: {money(item.expense)}</span><span>נטו: {money(item.net)}</span></div><div className="mt-1 text-xs text-[#b8ad99]">{item.count} תנועות · {item.from.slice(0,10)}–{item.to.slice(0,10)}</div></div>;
 }
 
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="rounded-3xl border border-white/10 bg-black/20 p-4"><div className="text-sm text-[#b8ad99]">{label}</div><div dir="ltr" className="mt-2 text-right text-2xl font-semibold">{value}</div><div className="mt-2 text-sm text-[#d9cfb8]">{note}</div></div>;
+function BucketRow({ bucket }: { bucket: CeoFinancePayload["buckets"][number] }) {
+  const tone = bucket.kind === "asset" ? "text-sky-200" : bucket.kind === "income" ? "text-emerald-200" : bucket.controllability === "review" ? "text-amber-100" : "text-[#f7f0df]";
+  return <div className="rounded-2xl bg-white/[0.04] p-4"><div className="flex items-center justify-between gap-3"><div><div className="font-medium">{bucket.name}</div><div className="text-xs text-[#b8ad99]">{scopeLabel[bucket.scope]} · {bucket.count} תנועות · {bucket.controllability}</div></div><div dir="ltr" className={`text-lg font-semibold ${tone}`}>{money(bucket.amount)}</div></div><p className="mt-2 text-sm leading-6 text-[#d9cfb8]">{bucket.note}</p>{bucket.topExamples.length > 0 && <div className="mt-2 text-xs text-[#b8ad99]">דוגמאות: {bucket.topExamples.join(" · ")}</div>}</div>;
+}
+
+function QualityRow({ item }: { item: CeoFinancePayload["dataQuality"][number] }) {
+  const cls = item.severity === "action" ? "border-amber-300/30 bg-amber-300/10 text-amber-50" : item.severity === "warning" ? "border-red-300/30 bg-red-300/10 text-red-50" : "border-emerald-300/20 bg-emerald-300/10 text-emerald-50";
+  return <div className={`rounded-2xl border p-4 text-sm leading-7 ${cls}`}>{item.text}</div>;
+}
+
+function MonthRow({ month }: { month: Record<string, number | string> }) {
+  return <div className="grid gap-2 rounded-2xl bg-white/[0.04] p-3 text-sm md:grid-cols-4"><div className="font-medium">{String(month.month)}</div><div>עסקי נטו: {money(Number(month.businessIncome) - Number(month.businessExpense))}</div><div>פרטי נטו: {money(Number(month.personalIncome) - Number(month.personalExpense))}</div><div>מניות/כרטיסים: {money(Number(month.investmentsAndFx) + Number(month.cardSettlements))}</div></div>;
 }
 
 function ConnectionRow({ item }: { item: Integration }) {
   const status = item.lastSyncAt ? "synced" : "never synced";
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 font-medium"><Landmark size={17}/>{item.provider}</div><Badge variant={item.lastSyncAt ? "default" : "secondary"}>{status}</Badge></div><div className="mt-1 text-sm text-[#b8ad99]">סנכרון אחרון: {item.lastSyncAt ?? "עדיין לא רץ"} · {item.transactionCount} תנועות</div>{item.requiresManualTwoFactor && <div className="mt-2 text-sm text-amber-100">מוגדר עם 2FA ידני / חלון דפדפן בזמן סנכרון</div>}</div>;
+  return <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 font-medium"><Landmark size={17}/>{item.provider}</div><Badge variant={item.lastSyncAt ? "default" : "secondary"}>{status}</Badge></div><div className="mt-1 text-sm text-[#b8ad99]">סנכרון אחרון: {item.lastSyncAt ?? "עדיין לא רץ"} · {item.transactionCount} תנועות</div></div>;
 }
 
 function Empty({ text }: { text: string }) {

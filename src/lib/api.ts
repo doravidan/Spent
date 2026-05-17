@@ -63,6 +63,48 @@ export function getSetupStatus() {
   return fetchJSON<SetupStatus>("/api/setup/status");
 }
 
+export function getCeoFinance() {
+  return fetchJSON<CeoFinancePayload>("/api/ceo/finance");
+}
+
+export interface CeoFinancePayload {
+  month: string;
+  monthLabel: string;
+  coverage: { from: string | null; to: string | null; transactionCount: number };
+  totals: Record<string, number>;
+  accounts: Array<{
+    provider: string;
+    providerName: string;
+    scope: "business" | "personal";
+    accountLabel: string;
+    count: number;
+    from: string;
+    to: string;
+    income: number;
+    expense: number;
+    net: number;
+  }>;
+  buckets: Array<{
+    name: string;
+    scope: "business" | "personal";
+    kind: "income" | "expense" | "asset" | "transfer";
+    controllability: "fixed" | "flexible" | "review" | "asset";
+    amount: number;
+    count: number;
+    note: string;
+    topExamples: string[];
+  }>;
+  monthly: Array<Record<string, number | string>>;
+  opportunities: Array<{
+    title: string;
+    detail: string;
+    monthlyImpact: number;
+    annualImpact: number;
+    scope: "business" | "personal" | "all";
+  }>;
+  dataQuality: Array<{ severity: "ok" | "warning" | "action"; text: string }>;
+}
+
 export function saveBankCredentials(
   provider: string,
   credentials: Record<string, string>,
