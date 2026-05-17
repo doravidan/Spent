@@ -71,6 +71,18 @@ export interface CeoFinancePayload {
   month: string;
   monthLabel: string;
   coverage: { from: string | null; to: string | null; transactionCount: number };
+  monthProgress: { day: number; daysInMonth: number; ratio: number; remainingDays: number };
+  health: { score: number; label: string; tone: "good" | "warn" | "bad"; reason: string };
+  story: string;
+  decision: {
+    title: string;
+    detail: string;
+    monthlyImpact: number;
+    annualImpact: number;
+    scope: "business" | "personal" | "all";
+    urgency: "low" | "medium" | "high";
+    why: string;
+  };
   totals: Record<string, number>;
   accounts: Array<{
     provider: string;
@@ -90,9 +102,23 @@ export interface CeoFinancePayload {
     kind: "income" | "expense" | "asset" | "transfer";
     controllability: "fixed" | "flexible" | "review" | "asset";
     amount: number;
+    projectedAmount: number;
+    baseline: number;
+    variance: number;
     count: number;
     note: string;
     topExamples: string[];
+  }>;
+  smartBudget: Array<{
+    name: string;
+    scope: "business" | "personal";
+    kind: "income" | "expense" | "asset" | "transfer";
+    controllability: "fixed" | "flexible" | "review" | "asset";
+    spent: number;
+    projected: number;
+    baseline: number;
+    variance: number;
+    decision: string;
   }>;
   monthly: Array<Record<string, number | string>>;
   opportunities: Array<{
@@ -102,6 +128,8 @@ export interface CeoFinancePayload {
     annualImpact: number;
     scope: "business" | "personal" | "all";
   }>;
+  weeklyCoach: Array<{ title: string; detail: string; amount: number; checked: boolean }>;
+  savingsScenarios: Array<{ label: string; monthly: number; quarterly: number; annual: number }>;
   dataQuality: Array<{ severity: "ok" | "warning" | "action"; text: string }>;
 }
 
