@@ -4,7 +4,8 @@ import { getDb } from "../index";
 import type { AppSettings } from "@/lib/types";
 
 // Global settings live in the `settings` table and apply to every workspace.
-// Currently: ai_provider, ai_ollama_url, ai_ollama_model.
+// Currently: ai_provider, ai_ollama_url, ai_ollama_model, ai_openrouter_model,
+// plus encrypted OpenRouter key triple.
 export function getGlobalSetting(key: string): string | null {
   const row = getDb()
     .prepare("SELECT value FROM settings WHERE key = ?")
@@ -67,12 +68,22 @@ export function getAppSettings(workspaceId: number): AppSettings {
   const storedTime = getGlobalSetting("auto_sync_time");
   const rawAIProvider = getGlobalSetting("ai_provider");
   const aiProvider: AppSettings["aiProvider"] =
-    rawAIProvider === "ollama" ? "ollama" : "none";
+    rawAIProvider === "ollama" || rawAIProvider === "openrouter"
+      ? rawAIProvider
+      : "none";
+  const hasOpenrouterKey = Boolean(
+    process.env.OPENROUTER_API_KEY?.trim() ||
+      (getGlobalSetting("ai_openrouter_api_key_encrypted") &&
+        getGlobalSetting("ai_openrouter_api_key_iv") &&
+        getGlobalSetting("ai_openrouter_api_key_auth_tag"))
+  );
   return {
     monthsToSync: Number(getWorkspaceSetting(workspaceId, "months_to_sync") ?? "3"),
     aiProvider,
     ollamaUrl: getGlobalSetting("ai_ollama_url") ?? "http://localhost:11434",
     ollamaModel: getGlobalSetting("ai_ollama_model") ?? "llama3.2:3b",
+    openrouterModel: getGlobalSetting("ai_openrouter_model") ?? "qwen/qwen3-coder:free",
+    hasOpenrouterKey,
     showBrowser: getWorkspaceSetting(workspaceId, "scraper_show_browser") === "true",
     paydayDay: Number(getWorkspaceSetting(workspaceId, "payday_day") ?? "1"),
     monthlyTarget: Number.isFinite(target) && target > 0 ? target : null,
@@ -94,7 +105,9 @@ export function updateAppSettings(
     if (settings.aiProvider !== undefined) {
       setGlobalSetting(
         "ai_provider",
-        settings.aiProvider === "ollama" ? "ollama" : "none"
+        settings.aiProvider === "ollama" || settings.aiProvider === "openrouter"
+          ? settings.aiProvider
+          : "none"
       );
     }
     if (settings.ollamaUrl !== undefined) {
@@ -102,6 +115,9 @@ export function updateAppSettings(
     }
     if (settings.ollamaModel !== undefined) {
       setGlobalSetting("ai_ollama_model", settings.ollamaModel);
+    }
+    if (settings.openrouterModel !== undefined) {
+      setGlobalSetting("ai_openrouter_model", settings.openrouterModel);
     }
     if (settings.showBrowser !== undefined) {
       setWorkspaceSetting(

@@ -49,6 +49,8 @@ function AIForm({ settings }: { settings: AppSettings }) {
   );
   const [ollamaUrl, setOllamaUrl] = useState(settings.ollamaUrl);
   const [ollamaModel, setOllamaModel] = useState(settings.ollamaModel);
+  const [openrouterModel, setOpenrouterModel] = useState(settings.openrouterModel);
+  const [openrouterApiKey, setOpenrouterApiKey] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -56,6 +58,11 @@ function AIForm({ settings }: { settings: AppSettings }) {
         provider,
         ollamaUrl: provider === "ollama" ? ollamaUrl : undefined,
         ollamaModel: provider === "ollama" ? ollamaModel : undefined,
+        openrouterModel: provider === "openrouter" ? openrouterModel : undefined,
+        openrouterApiKey:
+          provider === "openrouter" && openrouterApiKey.trim()
+            ? openrouterApiKey.trim()
+            : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -76,6 +83,11 @@ function AIForm({ settings }: { settings: AppSettings }) {
                 id: "ollama",
                 title: "Ollama (Local)",
                 desc: "Free, private, runs on your machine. Needs a model download.",
+              },
+              {
+                id: "openrouter",
+                title: "OpenRouter (Free)",
+                desc: "Best free hosted model for categorization. Needs an OpenRouter API key.",
               },
               {
                 id: "none",
@@ -152,6 +164,47 @@ function AIForm({ settings }: { settings: AppSettings }) {
               </p>
             </div>
             <OllamaModelStatus ollamaUrl={ollamaUrl} model={ollamaModel} />
+          </div>
+        </SettingCard>
+      )}
+
+      {provider === "openrouter" && (
+        <SettingCard
+          title="OpenRouter configuration"
+          description="Uses the free OpenRouter model qwen/qwen3-coder:free for structured finance categorization. Your key is encrypted locally."
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="openrouter-model">Model</Label>
+              <Input
+                id="openrouter-model"
+                value={openrouterModel}
+                onChange={(e) => setOpenrouterModel(e.target.value)}
+                placeholder="qwen/qwen3-coder:free"
+              />
+              <p className="text-xs text-muted-foreground">
+                Recommended free model: qwen/qwen3-coder:free — strong JSON/structured output and long context for transaction batches.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="openrouter-key">
+                OpenRouter API key {settings.hasOpenrouterKey ? "(saved)" : ""}
+              </Label>
+              <Input
+                id="openrouter-key"
+                type="password"
+                value={openrouterApiKey}
+                onChange={(e) => setOpenrouterApiKey(e.target.value)}
+                placeholder={
+                  settings.hasOpenrouterKey
+                    ? "Leave blank to keep saved key"
+                    : "sk-or-v1-..."
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Required for OpenRouter. Stored only in local encrypted settings or read from OPENROUTER_API_KEY.
+              </p>
+            </div>
           </div>
         </SettingCard>
       )}

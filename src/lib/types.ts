@@ -256,9 +256,11 @@ export interface SetupStatus {
 
 export interface AppSettings {
   monthsToSync: number;
-  aiProvider: "ollama" | "none";
+  aiProvider: "ollama" | "openrouter" | "none";
   ollamaUrl: string;
   ollamaModel: string;
+  openrouterModel: string;
+  hasOpenrouterKey: boolean;
   showBrowser: boolean;
   paydayDay: number;
   monthlyTarget: number | null;

@@ -155,9 +155,11 @@ export function testBankConnection(provider: string) {
 }
 
 export function saveAIConfig(config: {
-  provider: "ollama" | "none";
+  provider: "ollama" | "openrouter" | "none";
   ollamaUrl?: string;
   ollamaModel?: string;
+  openrouterModel?: string;
+  openrouterApiKey?: string;
 }) {
   return fetchJSON<{ success: boolean }>("/api/setup/ai", {
     method: "POST",
