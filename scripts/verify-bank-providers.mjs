@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from "node:fs";
 import { CompanyTypes, SCRAPERS, createScraper } from "israeli-bank-scrapers";
 
 const expectedProviders = [
@@ -44,6 +45,27 @@ const providerToCompanyType = {
 };
 
 const failures = [];
+const typesSource = fs.readFileSync(new URL("../src/lib/types.ts", import.meta.url), "utf8");
+
+function assertProviderField(provider, fieldKey, checks) {
+  const providerBlock = typesSource.match(
+    new RegExp(`id: "${provider}"[\\s\\S]*?credentialFields: \\[([\\s\\S]*?)\\n    \\],`)
+  )?.[1];
+  if (!providerBlock) {
+    failures.push(`${provider}: missing UI provider block in src/lib/types.ts`);
+    return;
+  }
+  const fieldBlock = providerBlock.match(
+    new RegExp(`key: "${fieldKey}"[\\s\\S]*?\\n      \\}`)
+  )?.[0];
+  if (!fieldBlock) {
+    failures.push(`${provider}.${fieldKey}: missing UI credential field`);
+    return;
+  }
+  for (const [description, test] of Object.entries(checks)) {
+    if (!test(fieldBlock)) failures.push(`${provider}.${fieldKey}: ${description}`);
+  }
+}
 
 for (const provider of expectedProviders) {
   const companyTypeKey = providerToCompanyType[provider];
@@ -86,6 +108,15 @@ const unmapped = packageProviders.filter(
 );
 if (unmapped.length > 0) {
   failures.push(`unmapped upstream scraper(s): ${unmapped.join(", ")}`);
+}
+
+for (const provider of ["discount", "mercantile"]) {
+  assertProviderField(provider, "num", {
+    "User Identification Code must be masked like a password": (field) =>
+      field.includes('type: "password"'),
+    "User Identification Code must accept non-numeric characters": (field) =>
+      !field.includes("numeric: true"),
+  });
 }
 
 if (failures.length > 0) {
