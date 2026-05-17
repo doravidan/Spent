@@ -20,9 +20,9 @@ export async function POST(request: Request) {
 
   if (provider === "oneZero") {
     return NextResponse.json({
-      success: false,
+      success: true,
       message:
-        "One Zero requires an OTP flow. Save the credentials, then run Sync now; Spent will ask for the SMS code and store the long-term token locally.",
+        "One Zero credentials are saved. Run Sync to receive the SMS code and store the long-term token locally.",
     });
   }
 

@@ -153,6 +153,7 @@ function CredentialsForm({
     success: boolean;
     message: string;
   } | null>(null);
+  const usesSyncOtpFlow = Boolean(info.supportsProgrammaticTwoFactor);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -311,14 +312,24 @@ function CredentialsForm({
         </div>
       )}
 
+      {usesSyncOtpFlow ? (
+        <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+          One Zero can only be verified during Sync because the bank sends an
+          SMS code. Save the credentials, then click Sync on the bank list; Spent
+          will ask for the code and store the long-term token locally.
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-        <Button
-          variant="outline"
-          onClick={handleTest}
-          disabled={!allValid || testing || saving}
-        >
-          {testing ? "Testing…" : "Test connection"}
-        </Button>
+        {!usesSyncOtpFlow ? (
+          <Button
+            variant="outline"
+            onClick={handleTest}
+            disabled={!allValid || testing || saving}
+          >
+            {testing ? "Testing…" : "Test connection"}
+          </Button>
+        ) : null}
         <Button onClick={handleSave} disabled={!allValid || saving || testing}>
           {saving ? "Saving…" : "Save"}
         </Button>

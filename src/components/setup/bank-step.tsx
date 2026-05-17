@@ -490,6 +490,7 @@ function CredentialForm({
     if (f.exactLength != null && v.length !== f.exactLength) return false;
     return true;
   });
+  const usesSyncOtpFlow = Boolean(info.supportsProgrammaticTwoFactor);
 
   const handleTest = async () => {
     setTesting(true);
@@ -667,15 +668,25 @@ function CredentialForm({
             )}
           </AnimatePresence>
 
+          {usesSyncOtpFlow ? (
+            <div className="rounded-md bg-muted/40 p-3 text-[11px] text-muted-foreground">
+              One Zero is verified during Sync because the bank sends an SMS
+              code. Save the credentials, then run Sync; Spent will ask for the
+              code and store the long-term token locally.
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={handleTest}
-              disabled={!valid || testing || saving}
-              className="flex-1 rounded-full"
-            >
-              {testing ? "Testing..." : "Test connection"}
-            </Button>
+            {!usesSyncOtpFlow ? (
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={!valid || testing || saving}
+                className="flex-1 rounded-full"
+              >
+                {testing ? "Testing..." : "Test connection"}
+              </Button>
+            ) : null}
             <Button
               onClick={handleSave}
               disabled={!valid || saving}
