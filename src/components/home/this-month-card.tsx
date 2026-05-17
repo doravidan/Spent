@@ -27,7 +27,7 @@ export function ThisMonthCard({ data }: Props) {
   const isHeadsUp = !isOver && delta >= 20;
   const isAhead = !isOver && delta <= -10;
 
-  let verdict = "Spent this month";
+  let verdict = "הוצאות החודש";
   let verdictClass = "text-muted-foreground";
   if (hasBudget) {
     if (isOver) {
@@ -47,8 +47,8 @@ export function ThisMonthCard({ data }: Props) {
 
   return (
     <CardShell
-      label={`This ${monthLabel}`}
-      action={<CardAction href="/budget">Budget detail →</CardAction>}
+      label={`${monthLabel}`}
+      action={<CardAction href="/budget">פירוט תקציב ←</CardAction>}
     >
       <Link
         href="/budget"
@@ -78,7 +78,7 @@ export function ThisMonthCard({ data }: Props) {
                 {Math.round(pctSpent)}% of {formatCurrency(budget)}
               </span>
               <span>
-                {daysUntilPayday} {daysUntilPayday === 1 ? "day" : "days"} to payday
+                {daysUntilPayday === 1 ? "יום אחד למשכורת" : `${daysUntilPayday} ימים למשכורת`}
               </span>
             </div>
           </div>
@@ -86,7 +86,7 @@ export function ThisMonthCard({ data }: Props) {
 
         {!hasBudget && (
           <div className="text-xs text-muted-foreground">
-            {daysUntilPayday} {daysUntilPayday === 1 ? "day" : "days"} to payday
+            {daysUntilPayday === 1 ? "יום אחד למשכורת" : `${daysUntilPayday} ימים למשכורת`}
           </div>
         )}
       </Link>
@@ -110,7 +110,7 @@ function DeltaPill({ value }: { value: number }) {
       title="Compared to the same window last month"
     >
       {!isFlat && <Icon className="h-3 w-3" />}
-      {Math.abs(rounded)}% vs. last month
+      {Math.abs(rounded)}% מול חודש שעבר
     </span>
   );
 }

@@ -113,7 +113,7 @@ function Body({
           <div className="min-w-0 flex-1">
             <SheetTitle>{category.name}</SheetTitle>
             <SheetDescription className="mt-0.5">
-              {category.kind === "expense" ? "Expense" : "Income"} category
+              {category.kind === "expense" ? "הוצאה" : "הכנסה"} category
               {data?.parentName ? ` · in ${data.parentName}` : ""}
             </SheetDescription>
           </div>

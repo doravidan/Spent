@@ -40,8 +40,8 @@ export function SyncFailureBanner({ items, className }: Props) {
 
   const headline =
     failures.length === 1
-      ? `Sync failed for ${failures[0].providerName}`
-      : `Sync failed for ${failures.length} banks`;
+      ? `הסנכרון נכשל עבור ${failures[0].providerName}`
+      : `הסנכרון נכשל עבור ${failures.length} בנקים`;
 
   const showsTwoFAHint = failures.some(
     (f) => f.errorMessage && TWO_FA_RE.test(f.errorMessage)
@@ -82,7 +82,7 @@ export function SyncFailureBanner({ items, className }: Props) {
               <span className="font-medium text-foreground/80">
                 {f.providerName}:
               </span>{" "}
-              {truncate(f.errorMessage ?? "Sync failed")}
+              {truncate(f.errorMessage ?? "הסנכרון נכשל")}
             </li>
           ))}
         </ul>
@@ -98,7 +98,7 @@ export function SyncFailureBanner({ items, className }: Props) {
         size="sm"
         nativeButton={false}
         className="self-start sm:self-auto"
-        render={<Link href="/settings/bank">Reconnect bank</Link>}
+        render={<Link href="/settings/bank">חיבור הבנק מחדש</Link>}
       />
     </div>
   );

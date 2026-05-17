@@ -53,7 +53,7 @@ export function HomePage() {
   return (
     <>
       <PageHeader
-        title="Home"
+        title="בית"
         actions={
           <>
             <SyncStatusPill
@@ -158,13 +158,13 @@ function renderCard(section: HomeSection, data: HomePayload) {
 
 const SKELETON_LABELS: Record<HomeSection, string> = {
   thisMonth: "This month",
-  cashFlow: "Cash flow",
-  categorySnapshot: "Top categories",
-  historicalTrend: "Last 8 months",
-  recentTransactions: "Recent activity",
-  topMerchants: "Top merchants",
-  needsAttention: "Needs attention",
-  bankHealth: "Bank connections",
+  cashFlow: "תזרים",
+  categorySnapshot: "קטגוריות מובילות",
+  historicalTrend: "8 חודשים אחרונים",
+  recentTransactions: "פעילות אחרונה",
+  topMerchants: "ספקים מובילים",
+  needsAttention: "דורש טיפול",
+  bankHealth: "חיבורי בנק",
 };
 
 const SKELETON_HEIGHTS: Record<HomeSection, number> = {

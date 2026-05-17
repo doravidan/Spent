@@ -23,7 +23,7 @@ export function KpiCards({ summary, loading }: KpiCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <KpiCard
-        label="Income"
+        label="הכנסה"
         amount={income}
         meta={`${incomeCount} ${incomeCount === 1 ? "transaction" : "transactions"}`}
         icon={<ArrowUpRight className="h-4 w-4" />}
@@ -32,7 +32,7 @@ export function KpiCards({ summary, loading }: KpiCardsProps) {
         loading={loading}
       />
       <KpiCard
-        label="Expenses"
+        label="הוצאות"
         amount={expense}
         meta={`${expenseCount} ${expenseCount === 1 ? "transaction" : "transactions"}`}
         icon={<ArrowDownRight className="h-4 w-4" />}

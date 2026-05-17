@@ -86,6 +86,17 @@ export function friendlyAIError(err: unknown, modelName: string): string {
   return `AI categorization failed: ${msg}`;
 }
 
+function looksLikeExpiredOneZeroToken(message: string): boolean {
+  return /idToken|otp|token|long.?term|two.?factor/i.test(message);
+}
+
+function hebrewScrapeError(provider: BankProvider, message: string): string {
+  if (provider === "oneZero" && looksLikeExpiredOneZeroToken(message)) {
+    return "הטוקן השמור של One Zero פג או נדחה. מחקתי אותו — לחץ סנכרון שוב, הזן את קוד ה-SMS, ואשמור טוקן חדש מקומית.";
+  }
+  return message;
+}
+
 function supportsProgrammaticTwoFactor(provider: BankProvider): boolean {
   return Boolean(
     BANK_PROVIDERS.find((b) => b.id === provider)?.supportsProgrammaticTwoFactor
@@ -118,11 +129,29 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
   if (supportsProgrammaticTwoFactor(provider)) {
     const existingToken = credentials.otpLongTermToken;
     if (existingToken) {
-      return scrapeOneZeroWithToken({
-        email: credentials.email,
-        password: credentials.password,
-        otpLongTermToken: existingToken,
-        startDate,
+      try {
+        const tokenResult = await scrapeOneZeroWithToken({
+          email: credentials.email,
+          password: credentials.password,
+          otpLongTermToken: existingToken,
+          startDate,
+        });
+        if (tokenResult.success) return tokenResult;
+        if (!looksLikeExpiredOneZeroToken(tokenResult.errorMessage ?? "")) {
+          return tokenResult;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!looksLikeExpiredOneZeroToken(message)) throw err;
+      }
+
+      updateCredentialField(workspaceId, provider, "otpLongTermToken", null);
+      delete credentials.otpLongTermToken;
+      send("provider-2fa-token-expired", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
       });
     }
 
@@ -130,7 +159,7 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
       return {
         success: false,
         accounts: [],
-        errorMessage: "Email and password are required for One Zero.",
+        errorMessage: "חסרים אימייל או סיסמה עבור One Zero.",
       };
     }
     const phoneNumber = normalizeOneZeroPhoneNumber(credentials.phoneNumber ?? "");
@@ -139,7 +168,7 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
         success: false,
         accounts: [],
         errorMessage:
-          "Phone number is required to receive the One Zero 2FA code. Use Israeli local format (05...) or international format (+972...).",
+          "חסר מספר טלפון לקבלת קוד SMS מ-One Zero. אפשר להזין 05... או ‎+972...‎.",
       };
     }
 
@@ -224,13 +253,17 @@ async function syncOneProvider(
   }
 
   if (!result.success) {
-    failSyncRun(syncRunId, result.errorMessage ?? "Scraping failed");
+    const errorMessage = hebrewScrapeError(
+      provider,
+      result.errorMessage ?? "הסנכרון נכשל"
+    );
+    failSyncRun(syncRunId, errorMessage);
     return {
       provider,
       ok: false,
       added: 0,
       updated: 0,
-      errorMessage: result.errorMessage ?? "Scraping failed",
+      errorMessage,
       syncRunId,
     };
   }

@@ -52,9 +52,9 @@ interface SyncProgressDialogProps {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  "ollama-start": "Starting Ollama…",
-  categorizing: "Categorizing with AI…",
-  "memory-hit": "Recognized from memory",
+  "ollama-start": "מפעיל את Ollama…",
+  categorizing: "מסווג עם AI…",
+  "memory-hit": "זוהה מהזיכרון",
 };
 
 export function SyncProgressDialog({
@@ -97,18 +97,18 @@ export function SyncProgressDialog({
           <DialogTitle className="mt-4 text-center font-serif text-2xl font-normal">
             {done
               ? aiWarning
-                ? "Synced — categorization skipped"
-                : "All synced!"
-              : "Syncing your accounts"}
+                ? "סונכרן — הסיווג דולג"
+                : "הכול סונכרן!"
+              : "מסנכרן את החשבונות"}
           </DialogTitle>
           <DialogDescription className="mt-1 text-center text-xs">
             {done
               ? aiWarning
-                ? "Connect an AI provider to auto-categorize transactions."
-                : "Pulling fresh data from your banks. You're up to date."
+                ? "חבר ספק AI כדי לסווג תנועות אוטומטית."
+                : "נמשכו נתונים עדכניים מהבנקים. הכול מעודכן."
               : stage
-                ? STAGE_LABELS[stage] ?? "Working…"
-                : "Reaching out to your banks…"}
+                ? STAGE_LABELS[stage] ?? "עובד…"
+                : "מתחבר לבנקים…"}
           </DialogDescription>
         </div>
 
@@ -125,11 +125,11 @@ export function SyncProgressDialog({
         {summary && (
           <div className="mx-6 mb-4 mt-2 overflow-hidden rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-around gap-3 text-center">
-              <SummaryStat label="New" value={summary.added} accent />
+              <SummaryStat label="חדש" value={summary.added} accent />
               <Divider />
-              <SummaryStat label="Updated" value={summary.updated} />
+              <SummaryStat label="עודכנו" value={summary.updated} />
               <Divider />
-              <SummaryStat label="Categorized" value={summary.categorized} />
+              <SummaryStat label="סווגו" value={summary.categorized} />
             </div>
           </div>
         )}
@@ -159,7 +159,7 @@ export function SyncProgressDialog({
               size="sm"
               nativeButton={false}
               className="self-start sm:self-auto"
-              render={<Link href="/settings/ai">Connect AI</Link>}
+              render={<Link href="/settings/ai">חיבור AI</Link>}
             />
           </div>
         )}
@@ -213,22 +213,22 @@ function ProviderRowView({
         <div className="relative min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{label}</div>
           <div className="truncate text-[11px] text-muted-foreground">
-            {row.status === "idle" && "Waiting…"}
-            {row.status === "running" && "Pulling transactions…"}
+            {row.status === "idle" && "ממתין…"}
+            {row.status === "running" && "מושך תנועות…"}
             {row.status === "awaiting-otp" &&
-              "Enter the one-time code we just sent you"}
+              "הזן את קוד האימות החד־פעמי שנשלח אליך"}
             {row.status === "manual-2fa" && (
               <span className="inline-flex items-center gap-1">
                 <ExternalLink className="h-3 w-3" />
-                Solve the 2FA in the popup window
+                השלם אימות דו־שלבי בחלון שנפתח
               </span>
             )}
             {row.status === "done" &&
               (row.added === 0 && row.updated === 0
-                ? "Already up to date"
-                : `+${row.added} new${row.updated ? ` · ${row.updated} updated` : ""}`)}
+                ? "כבר מעודכן"
+                : `+${row.added} חדשות${row.updated ? ` · ${row.updated} עודכנו` : ""}`)}
             {row.status === "error" &&
-              (row.errorMessage?.slice(0, 60) ?? "Failed")}
+              (row.errorMessage?.slice(0, 60) ?? "נכשל")}
           </div>
         </div>
 
@@ -268,7 +268,7 @@ function OtpInputArea({
       await onSubmit(syncRunId, trimmed);
       setCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not submit the code.");
+      setError(err instanceof Error ? err.message : "לא ניתן לשלוח את הקוד.");
     } finally {
       setSubmitting(false);
     }
@@ -285,17 +285,17 @@ function OtpInputArea({
         onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
         inputMode="numeric"
         pattern="[0-9]*"
-        placeholder="6-digit code"
+        placeholder="קוד בן 6 ספרות"
         className="font-mono"
         disabled={submitting}
-        aria-label="One-time code"
+        aria-label="קוד חד־פעמי"
       />
       <Button
         type="submit"
         size="sm"
         disabled={submitting || code.trim().length < 4}
       >
-        {submitting ? "Submitting…" : "Submit"}
+        {submitting ? "שולח…" : "שלח"}
       </Button>
       {error && (
         <p className="absolute -bottom-5 left-0 text-[11px] text-destructive">
@@ -326,7 +326,7 @@ function StatusBadge({
       <div
         className="flex h-6 w-6 items-center justify-center rounded-full"
         style={{ background: "var(--status-heads-up)" }}
-        aria-label="Waiting for one-time code"
+        aria-label="ממתין לקוד חד־פעמי"
       >
         <ShieldCheck className="h-3.5 w-3.5 text-background" strokeWidth={2.5} />
       </div>

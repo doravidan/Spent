@@ -8,7 +8,7 @@ import {
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
     <AppShell>
-      <PageHeader title="Settings" />
+      <PageHeader title="הגדרות" />
       <div className="flex min-h-[calc(100vh-4rem)] flex-1">
         <SettingsSidebar />
         <main className="min-w-0 flex-1">

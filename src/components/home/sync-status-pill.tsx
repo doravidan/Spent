@@ -20,7 +20,7 @@ interface PillState {
 
 function describe(items: HomeBankHealthItem[] | null): PillState {
   if (!items || items.length === 0) {
-    return { tone: "muted", label: "No banks connected", detail: null };
+    return { tone: "muted", label: "אין בנקים מחוברים", detail: null };
   }
 
   const errors = items.filter((i) => i.status === "error");
@@ -29,8 +29,8 @@ function describe(items: HomeBankHealthItem[] | null): PillState {
       tone: "error",
       label:
         errors.length === 1
-          ? "1 bank failed"
-          : `${errors.length} banks failed`,
+          ? "בנק אחד נכשל"
+          : `${errors.length} בנקים נכשלו`,
       detail: errors.map((e) => e.providerName).join(", "),
     };
   }
@@ -40,7 +40,7 @@ function describe(items: HomeBankHealthItem[] | null): PillState {
   const everSynced = items.filter((i) => i.lastSyncAt != null);
 
   if (everSynced.length === 0) {
-    return { tone: "muted", label: "Never synced", detail: null };
+    return { tone: "muted", label: "לא סונכרן עדיין", detail: null };
   }
 
   const oldestSync = everSynced.reduce<string | null>((oldest, i) => {
@@ -55,14 +55,14 @@ function describe(items: HomeBankHealthItem[] | null): PillState {
   if (staleItems.length > 0 && okItems.length === 0) {
     return {
       tone: "warn",
-      label: `Last sync ${formatLastSync(oldestSync)}`,
+      label: `סנכרון אחרון ${formatLastSync(oldestSync)}`,
       detail: staleItems.map((s) => s.providerName).join(", "),
     };
   }
 
   return {
     tone: "ok",
-    label: `Synced ${formatLastSync(oldestSync)}`,
+    label: `סונכרן ${formatLastSync(oldestSync)}`,
     detail: null,
   };
 }
@@ -95,10 +95,10 @@ export function SyncStatusPill({ items, nextScheduledSync }: Props) {
   const styles = TONE_STYLES[state.tone];
 
   const nextText = nextScheduledSync
-    ? `next ${formatJerusalemTimeOfDay(nextScheduledSync)}`
+    ? `הבא ${formatJerusalemTimeOfDay(nextScheduledSync)}`
     : null;
 
-  const tooltip = [state.detail, nextText && `Next auto-sync at ${formatJerusalemTimeOfDay(nextScheduledSync!)}`]
+  const tooltip = [state.detail, nextText && `סנכרון אוטומטי הבא ב-${formatJerusalemTimeOfDay(nextScheduledSync!)}`]
     .filter(Boolean)
     .join(" • ");
 

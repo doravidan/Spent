@@ -25,7 +25,7 @@ export function AISection() {
   });
   if (!settings) {
     return (
-      <SectionShell title="AI & automation">
+      <SectionShell title="AI ואוטומציה">
         <SettingCard>
           <div className="text-sm text-muted-foreground">Loading...</div>
         </SettingCard>
@@ -34,7 +34,7 @@ export function AISection() {
   }
   return (
     <SectionShell
-      title="AI & automation"
+      title="AI ואוטומציה"
       description="How Spent organizes new transactions. Switch any time — your existing categorizations stay."
     >
       <AIForm key={settings.aiProvider} settings={settings} />
@@ -73,7 +73,7 @@ function AIForm({ settings }: { settings: AppSettings }) {
   return (
     <>
       <SettingCard
-        title="Provider"
+        title="ספק"
         description="Switch any time. Your existing categorizations are kept."
       >
         <div className="grid gap-2 sm:grid-cols-2">
@@ -170,7 +170,7 @@ function AIForm({ settings }: { settings: AppSettings }) {
 
       {provider === "openrouter" && (
         <SettingCard
-          title="OpenRouter configuration"
+          title="הגדרת OpenRouter"
           description="Uses the free OpenRouter model qwen/qwen3-coder:free for structured finance categorization. Your key is encrypted locally."
         >
           <div className="space-y-4">
@@ -214,7 +214,7 @@ function AIForm({ settings }: { settings: AppSettings }) {
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? "Saving..." : "Save AI settings"}
+          {mutation.isPending ? "Saving..." : "שמירת הגדרות AI"}
         </Button>
       </div>
     </>

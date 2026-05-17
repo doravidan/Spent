@@ -553,7 +553,7 @@ function CredentialForm({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="סגירה"
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
         >
           ✕

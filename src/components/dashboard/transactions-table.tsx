@@ -179,7 +179,7 @@ export function TransactionsTable({
               }}
             >
               <SelectTrigger className="h-8 w-[160px]">
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
@@ -367,7 +367,7 @@ export function TransactionsTable({
                                   : undefined
                               }
                             >
-                              {txn.categoryName ?? "Uncategorized"}
+                              {txn.categoryName ?? "לא מסווג"}
                             </Badge>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start">

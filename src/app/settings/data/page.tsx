@@ -30,7 +30,7 @@ export default function DataSettingsPage() {
 
   return (
     <SectionShell
-      title="Data & privacy"
+      title="נתונים ופרטיות"
       description="Spent runs locally. Your credentials are encrypted at rest and never leave your machine."
     >
       {settings ? (

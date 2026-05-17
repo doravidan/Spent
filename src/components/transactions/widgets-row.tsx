@@ -154,7 +154,7 @@ function PendingReview({ count, loading }: PendingReviewProps) {
           disabled={mutation.isPending || loading || count === 0}
           className="mt-3 inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {mutation.isPending ? "Loading..." : "Review now"}
+          {mutation.isPending ? "טוען..." : "Review now"}
         </button>
       </div>
 

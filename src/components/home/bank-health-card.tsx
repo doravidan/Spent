@@ -14,11 +14,11 @@ export function BankHealthCard({ items }: Props) {
     return (
       <div id="bank-health" className="contents">
         <CardShell
-          label="Bank connections"
-          action={<CardAction href="/settings/bank">Manage →</CardAction>}
+          label="חיבורי בנק"
+          action={<CardAction href="/settings/bank">ניהול ←</CardAction>}
         >
           <div className="flex flex-1 items-center justify-center py-6 text-sm text-muted-foreground">
-            No banks connected yet.
+            עדיין אין בנקים מחוברים.
           </div>
         </CardShell>
       </div>
@@ -28,8 +28,8 @@ export function BankHealthCard({ items }: Props) {
   return (
     <div id="bank-health" className="contents">
       <CardShell
-        label="Bank connections"
-        action={<CardAction href="/settings/bank">Manage →</CardAction>}
+        label="חיבורי בנק"
+        action={<CardAction href="/settings/bank">ניהול ←</CardAction>}
       >
         <ul className="flex flex-1 flex-col gap-3">
           {items.map((item) => (
@@ -81,12 +81,12 @@ function StatusDot({ status }: { status: HomeBankHealthItem["status"] }) {
 function StatusLabel({ status }: { status: HomeBankHealthItem["status"] }) {
   const text =
     status === "ok"
-      ? "OK"
+      ? "תקין"
       : status === "stale"
-        ? "Stale"
+        ? "לא עדכני"
         : status === "error"
-          ? "Error"
-          : "Never synced";
+          ? "שגיאה"
+          : "לא סונכרן עדיין";
   const cls =
     status === "ok"
       ? "text-[var(--status-on-track)]"
@@ -102,6 +102,6 @@ function describeLastSync(
   iso: string | null,
   status: HomeBankHealthItem["status"]
 ): string {
-  if (!iso) return status === "error" ? "Last attempt failed" : "Never synced";
+  if (!iso) return status === "error" ? "הניסיון האחרון נכשל" : "לא סונכרן עדיין";
   return formatLastSync(iso);
 }

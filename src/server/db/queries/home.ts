@@ -56,7 +56,7 @@ export function getHistoricalTrend(
     const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
     months.push({
       key,
-      label: start.toLocaleDateString("en-US", { month: "short" }),
+      label: start.toLocaleDateString("he-IL", { month: "short" }),
       from: toLocalISODate(start),
       to: toLocalISODate(end),
     });
@@ -149,6 +149,10 @@ export function getBankHealth(workspaceId: number): HomeBankHealthItem[] {
   const latestRunStmt = db.prepare(
     `SELECT status, completed_at, error_message FROM sync_runs
      WHERE workspace_id = ? AND provider = ?
+       AND COALESCE(error_message, '') NOT IN (
+         'Sync stream closed by client.',
+         'הסנכרון הופסק לפני שהושלם. הפעל סנכרון מחדש.'
+       )
      ORDER BY started_at DESC LIMIT 1`
   );
 

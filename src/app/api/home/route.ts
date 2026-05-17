@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   const monthEnd = new Date(year, month + 1, 0);
   const from = toLocalISODate(monthStart);
   const to = toLocalISODate(monthEnd);
-  const monthLabel = monthStart.toLocaleDateString("en-US", { month: "long" });
+  const monthLabel = monthStart.toLocaleDateString("he-IL", { month: "long" });
 
   const totalDays = daysInMonth(year, month);
   const elapsedDays = Math.max(1, dayWithinMonth(now, year, month));

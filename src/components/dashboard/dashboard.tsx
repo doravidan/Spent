@@ -65,7 +65,7 @@ export function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Budgets"
+        title="תקציבים"
         meta={monthLabel}
         actions={
           <>

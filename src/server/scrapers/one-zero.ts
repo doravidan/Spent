@@ -45,6 +45,18 @@ export interface OneZeroFirstSyncResult extends ScrapeResult {
 
 const SCRAPER_TIMEOUT_MS = 60000;
 
+function scraperErrorMessage(result: unknown, fallback: string): string {
+  if (
+    result &&
+    typeof result === "object" &&
+    "errorMessage" in result &&
+    typeof (result as { errorMessage?: unknown }).errorMessage === "string"
+  ) {
+    return (result as { errorMessage: string }).errorMessage;
+  }
+  return fallback;
+}
+
 function buildScraper(startDate: Date) {
   return createScraper({
     companyId: CompanyTypes.oneZero,
@@ -91,8 +103,10 @@ export async function scrapeOneZeroFirstTime(
     return {
       success: false,
       accounts: [],
-      errorMessage:
-        trigger.errorMessage ?? "Failed to send 2FA code to your phone.",
+      errorMessage: scraperErrorMessage(
+        trigger,
+        "לא הצלחתי לשלוח קוד אימות לטלפון."
+      ),
     };
   }
 
@@ -103,8 +117,7 @@ export async function scrapeOneZeroFirstTime(
     return {
       success: false,
       accounts: [],
-      errorMessage:
-        err instanceof Error ? err.message : "OTP entry was cancelled.",
+      errorMessage: err instanceof Error ? err.message : "הזנת קוד האימות בוטלה.",
     };
   }
   opts.onOtpSubmitted?.();
@@ -114,9 +127,10 @@ export async function scrapeOneZeroFirstTime(
     return {
       success: false,
       accounts: [],
-      errorMessage:
-        tokenResult.errorMessage ??
-        "The one-time code was rejected by One Zero.",
+      errorMessage: scraperErrorMessage(
+        tokenResult,
+        "קוד האימות נדחה על ידי One Zero."
+      ),
     };
   }
 
@@ -126,13 +140,17 @@ export async function scrapeOneZeroFirstTime(
     email: opts.email,
     password: opts.password,
     otpLongTermToken: longTermToken,
-  });
+  }).catch((err: unknown) => ({
+    success: false as const,
+    accounts: [],
+    errorMessage: err instanceof Error ? err.message : String(err),
+  }));
 
   if (!scrapeResult.success) {
     return {
       success: false,
       accounts: [],
-      errorMessage: scrapeResult.errorMessage ?? "Scrape failed after login.",
+      errorMessage: scraperErrorMessage(scrapeResult, "הסנכרון נכשל אחרי התחברות."),
       otpLongTermToken: longTermToken,
     };
   }
@@ -152,13 +170,17 @@ export async function scrapeOneZeroWithToken(
     email: opts.email,
     password: opts.password,
     otpLongTermToken: opts.otpLongTermToken,
-  });
+  }).catch((err: unknown) => ({
+    success: false as const,
+    accounts: [],
+    errorMessage: err instanceof Error ? err.message : String(err),
+  }));
 
   if (!scrapeResult.success) {
     return {
       success: false,
       accounts: [],
-      errorMessage: scrapeResult.errorMessage ?? "Scrape failed.",
+      errorMessage: scraperErrorMessage(scrapeResult, "הסנכרון נכשל."),
     };
   }
 

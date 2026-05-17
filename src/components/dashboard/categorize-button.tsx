@@ -77,7 +77,7 @@ export function CategorizeButton({ onApplied }: CategorizeButtonProps) {
             />
           </svg>
         )}
-        {mutation.isPending ? "Thinking..." : "Categorize"}
+        {mutation.isPending ? "Thinking..." : "סיווג"}
       </Button>
 
       {preview && (

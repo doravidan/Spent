@@ -22,8 +22,8 @@ import {
 
 const FILTER_OPTIONS: { value: TransactionKindFilter; label: string }[] = [
   { value: "all", label: "All activity" },
-  { value: "income", label: "Income" },
-  { value: "expense", label: "Expenses" },
+  { value: "income", label: "הכנסה" },
+  { value: "expense", label: "הוצאות" },
 ];
 
 export function TransactionsPage() {
@@ -86,7 +86,7 @@ export function TransactionsPage() {
   return (
     <>
       <PageHeader
-        title="Transactions"
+        title="תנועות"
         meta={formatMonthLabel(selectedDate)}
         actions={
           <PeriodSelector

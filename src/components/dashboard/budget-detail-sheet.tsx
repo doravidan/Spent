@@ -423,7 +423,7 @@ function DetailContent({ data }: { data: CategoryDetail }) {
                           className="border-none p-0"
                           style={{ color: t.categoryColor ?? undefined }}
                         >
-                          {t.categoryName ?? "Uncategorized"}
+                          {t.categoryName ?? "לא מסווג"}
                         </Badge>
                         <ChevronDown className="h-3 w-3 text-muted-foreground" />
                       </DropdownMenuTrigger>
@@ -586,7 +586,7 @@ function NeedsReviewSection({
                       color: t.categoryColor ?? undefined,
                     }}
                   >
-                    {t.categoryName ?? "Uncategorized"}
+                    {t.categoryName ?? "לא מסווג"}
                   </Badge>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </DropdownMenuTrigger>
