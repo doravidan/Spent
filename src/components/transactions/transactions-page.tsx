@@ -21,7 +21,7 @@ import {
 } from "@/lib/formatters";
 
 const FILTER_OPTIONS: { value: TransactionKindFilter; label: string }[] = [
-  { value: "all", label: "All activity" },
+  { value: "all", label: "כל הפעילות" },
   { value: "income", label: "הכנסה" },
   { value: "expense", label: "הוצאות" },
 ];
@@ -58,7 +58,16 @@ export function TransactionsPage() {
   })();
 
   const transactionsQuery = useQuery({
-    queryKey: ["transactions", from, to, search, categoryFilter, page, kind],
+    queryKey: [
+      "transactions",
+      from,
+      to,
+      search,
+      categoryFilter,
+      expandedFilter.categoryIds?.join(",") ?? "",
+      page,
+      kind,
+    ],
     queryFn: () =>
       getTransactions({
         from,
@@ -78,9 +87,8 @@ export function TransactionsPage() {
   });
 
   const categoriesQuery = useQuery({
-    queryKey: ["categories", kind === "income" ? "income" : "expense"],
-    queryFn: () =>
-      kind === "income" ? getCategories("income") : getCategories("expense"),
+    queryKey: ["categories", kind === "all" ? "all" : kind],
+    queryFn: () => (kind === "all" ? getCategories() : getCategories(kind)),
   });
 
   return (

@@ -30,7 +30,7 @@ export function WidgetsRow({ summary, loading }: WidgetsRowProps) {
       </div>
       <div className="flex flex-col gap-4">
         <PendingReview count={pendingReviewCount} loading={loading} />
-        <Outliers
+        <חריגים
           largestIncome={largestIncome}
           largestExpense={largestExpense}
           loading={loading}
@@ -49,13 +49,13 @@ function TopMerchants({ merchants, loading }: TopMerchantsProps) {
   return (
     <div className="h-full rounded-2xl border border-border bg-card p-5">
       <div className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-        Top merchants
+        ספקים מובילים
       </div>
       <div className="mt-3 space-y-2">
         {loading ? (
-          <div className="text-sm text-muted-foreground">Loading...</div>
+          <div className="text-sm text-muted-foreground">טוען...</div>
         ) : merchants.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No merchants yet.</div>
+          <div className="text-sm text-muted-foreground">אין עדיין ספקים.</div>
         ) : (
           merchants.map((m, idx) => (
             <div
@@ -72,7 +72,7 @@ function TopMerchants({ merchants, loading }: TopMerchantsProps) {
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span className="text-xs text-muted-foreground">
-                  {m.count} {m.count === 1 ? "txn" : "txns"}
+                  {m.count} {m.count === 1 ? "תנועה" : "תנועות"}
                 </span>
                 <span className="font-serif text-base tabular-nums">
                   {formatCurrency(m.total)}
@@ -99,14 +99,14 @@ function PendingReview({ count, loading }: PendingReviewProps) {
     mutationFn: previewCategorize,
     onSuccess: (data) => {
       if (data.uncategorizedCount === 0) {
-        toast.info("Nothing left to categorize.");
+        toast.info("אין עוד תנועות לסיווג.");
         return;
       }
       setPreview(data);
     },
     onError: (err) => {
       toast.error(
-        err instanceof Error ? err.message : "Categorization failed"
+        err instanceof Error ? err.message : "הסיווג נכשל"
       );
     },
   });
@@ -115,10 +115,10 @@ function PendingReview({ count, loading }: PendingReviewProps) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-          Pending review
+          דורש בדיקה
         </div>
         <div className="mt-2 text-sm text-muted-foreground">
-          Nothing flagged for review.
+          אין תנועות שמסומנות לבדיקה.
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ function PendingReview({ count, loading }: PendingReviewProps) {
       <div className="rounded-2xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-            Pending review
+            דורש בדיקה
           </div>
           <div
             className="flex h-7 w-7 items-center justify-center rounded-full"
@@ -146,7 +146,7 @@ function PendingReview({ count, loading }: PendingReviewProps) {
           {loading ? <span className="text-muted-foreground">—</span> : count}
         </div>
         <div className="mt-0.5 text-xs text-muted-foreground">
-          {count === 1 ? "transaction" : "transactions"} need a closer look
+          {count === 1 ? "תנועה דורשת" : "תנועות דורשות"} בדיקה
         </div>
         <button
           type="button"
@@ -154,7 +154,7 @@ function PendingReview({ count, loading }: PendingReviewProps) {
           disabled={mutation.isPending || loading || count === 0}
           className="mt-3 inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {mutation.isPending ? "טוען..." : "Review now"}
+          {mutation.isPending ? "טוען..." : "בדוק עכשיו"}
         </button>
       </div>
 
@@ -177,28 +177,28 @@ function PendingReview({ count, loading }: PendingReviewProps) {
   );
 }
 
-interface OutliersProps {
+interface חריגיםProps {
   largestIncome: TransactionsSummary["income"]["largest"];
   largestExpense: TransactionsSummary["expense"]["largest"];
   loading: boolean;
 }
 
-function Outliers({ largestIncome, largestExpense, loading }: OutliersProps) {
+function חריגים({ largestIncome, largestExpense, loading }: חריגיםProps) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-        Outliers
+        חריגים
       </div>
       <div className="mt-3 space-y-3">
         <OutlierRow
-          label="Largest expense"
+          label="ההוצאה הגדולה ביותר"
           txn={largestExpense}
           color="var(--status-over)"
           icon={<ArrowDownRight className="h-4 w-4" />}
           loading={loading}
         />
         <OutlierRow
-          label="Largest income"
+          label="ההכנסה הגדולה ביותר"
           txn={largestIncome}
           color="var(--status-on-track)"
           icon={<ArrowUpRight className="h-4 w-4" />}

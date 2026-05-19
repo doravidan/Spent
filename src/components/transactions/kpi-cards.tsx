@@ -25,7 +25,7 @@ export function KpiCards({ summary, loading }: KpiCardsProps) {
       <KpiCard
         label="הכנסה"
         amount={income}
-        meta={`${incomeCount} ${incomeCount === 1 ? "transaction" : "transactions"}`}
+        meta={`${incomeCount} ${incomeCount === 1 ? "תנועה" : "תנועות"}`}
         icon={<ArrowUpRight className="h-4 w-4" />}
         color="var(--status-on-track)"
         iconBg={INCOME_TINT}
@@ -34,16 +34,16 @@ export function KpiCards({ summary, loading }: KpiCardsProps) {
       <KpiCard
         label="הוצאות"
         amount={expense}
-        meta={`${expenseCount} ${expenseCount === 1 ? "transaction" : "transactions"}`}
+        meta={`${expenseCount} ${expenseCount === 1 ? "תנועה" : "תנועות"}`}
         icon={<ArrowDownRight className="h-4 w-4" />}
         color="var(--status-over)"
         iconBg={EXPENSE_TINT}
         loading={loading}
       />
       <KpiCard
-        label={netPositive ? "Net saved" : "Net overspend"}
+        label={netPositive ? "נטו נשאר" : "נטו חריגה"}
         amount={Math.abs(net)}
-        meta={netPositive ? "Income exceeded expenses" : "Expenses exceeded income"}
+        meta={netPositive ? "ההכנסות גבוהות מההוצאות" : "ההוצאות גבוהות מההכנסות"}
         icon={
           net === 0 ? (
             <Minus className="h-4 w-4" />

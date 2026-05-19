@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { listWorkspaces } from "@/lib/api";
 import {
   setActiveWorkspaceId,
@@ -124,5 +125,66 @@ export function WorkspaceSwitcher() {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+  );
+}
+
+
+export function WorkspaceTopSwitcher() {
+  const router = useRouter();
+  const switchWorkspace = useSwitchWorkspace();
+  const activeId = useActiveWorkspaceId();
+
+  const { data: workspaces = [] } = useQuery<Workspace[]>({
+    queryKey: ["workspaces"],
+    queryFn: listWorkspaces,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (activeId == null && workspaces.length > 0) {
+      setActiveWorkspaceId(workspaces[0].id);
+    }
+  }, [activeId, workspaces]);
+
+  const active = workspaces.find((w) => w.id === activeId) ?? workspaces[0];
+  const initial = (active?.name ?? "?").trim().charAt(0).toUpperCase() || "?";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" className="h-10 gap-2 rounded-full px-3" />
+        }
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+          {initial}
+        </span>
+        <span className="hidden max-w-[10rem] truncate text-sm md:inline">
+          {active?.name ?? "סביבת עבודה"}
+        </span>
+        <ChevronsUpDown className="size-4 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={10} className="min-w-[14rem]">
+        <div className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          סביבות עבודה
+        </div>
+        {workspaces.map((w) => (
+          <DropdownMenuItem key={w.id} onClick={() => switchWorkspace(w.id)} className="gap-2">
+            <FolderKanban className="size-4 opacity-70" />
+            <span className="flex-1 truncate">{w.name}</span>
+            {w.id === activeId ? <Check className="size-4 text-primary" /> : null}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/setup?mode=new-workspace")} className="gap-2">
+          <Plus className="size-4" />
+          סביבת עבודה חדשה
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/settings#workspace")} className="gap-2">
+          <Settings2 className="size-4" />
+          ניהול סביבות עבודה
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

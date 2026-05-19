@@ -24,7 +24,7 @@ import {
   normalizeMerchant,
   incrementMerchantHits,
 } from "@/server/lib/merchant-memory";
-import { getAllCategories } from "@/server/db/queries/categories";
+import { getAllCategories, getCategoryByName } from "@/server/db/queries/categories";
 import { getRecentCorrections } from "@/server/db/queries/category-corrections";
 import { scrapeBank } from "@/server/scrapers";
 import {
@@ -101,6 +101,50 @@ function supportsProgrammaticTwoFactor(provider: BankProvider): boolean {
   return Boolean(
     BANK_PROVIDERS.find((b) => b.id === provider)?.supportsProgrammaticTwoFactor
   );
+}
+
+
+function fallbackExpenseCategoryName(description: string): string {
+  const text = description.toLowerCase();
+  const includes = (words: string[]) => words.some((w) => text.includes(w));
+
+  if (includes(["כ.א.ל", "כאל", "ישראכרט", "מקס", "ויזה", "כרטיס", "דיירקט", "cal", "isracard", "max"])) {
+    return "חיובי כרטיס אישי";
+  }
+  if (includes(['רכישת מטח', 'ניירות', 'ני"ע', 'עמלה בני"ע', 'מטח', 'מט"ח', 'חליפין', 'micron', 'intel', 'מיקרון', 'אינטל'])) {
+    return "השקעות ומט״ח";
+  }
+  if (includes(["משכנתא"])) return "משכנתא";
+  if (includes(['תרומה', 'חב"ד', 'בית חב', 'נווה שלום'])) return "תרומות";
+  if (includes(["דמי מנוי"])) return "דמי מנוי בנק";
+  if (includes(["עמלה", "ריבית", "מס ", "אשראי"])) return "עמלות וריבית בנק";
+  return "העברות ושיקים לבדיקה";
+}
+
+function fallbackCategorizeExpenses(workspaceId: number): number {
+  const ids = getUncategorizedIdsByKind(workspaceId, "expense");
+  if (ids.length === 0) return 0;
+
+  const txns = getTransactionsForCategorization(workspaceId, ids);
+  const updates: { id: number; categoryId: number; aiConfidence: number | null }[] = [];
+  const reviewFlags: { id: number; needsReview: boolean }[] = [];
+
+  for (const txn of txns) {
+    const categoryName = fallbackExpenseCategoryName(txn.description);
+    const category = getCategoryByName(workspaceId, categoryName);
+    if (!category) continue;
+    updates.push({ id: txn.id, categoryId: category.id, aiConfidence: null });
+    reviewFlags.push({
+      id: txn.id,
+      needsReview: categoryName.includes("לבדיקה") || categoryName.includes("כרטיס"),
+    });
+  }
+
+  if (updates.length > 0) {
+    batchUpdateCategories(workspaceId, updates);
+    batchSetNeedsReview(workspaceId, reviewFlags);
+  }
+  return updates.length;
 }
 
 interface RunScrapeArgs {
@@ -418,6 +462,18 @@ export async function syncWorkspace(
     aiWarning =
       "AI provider not connected — new transactions weren't auto-categorized.";
   }
+  const fallbackCategorizedBeforeAi = fallbackCategorizeExpenses(workspaceId);
+  if (fallbackCategorizedBeforeAi > 0) {
+    categorized += fallbackCategorizedBeforeAi;
+    send("stage", {
+      workspaceId,
+      workspaceName,
+      stage: "fallback-categorized",
+      count: fallbackCategorizedBeforeAi,
+      kind: "expense",
+    });
+  }
+
   if (aiProvider) {
     if (settings.aiProvider === "ollama") {
       send("stage", {

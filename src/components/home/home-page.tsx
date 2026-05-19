@@ -69,7 +69,7 @@ export function HomePage() {
         }
       />
 
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl p-4 md:p-6 lg:p-8">
         <SyncFailureBanner
           items={data?.bankHealth ?? null}
           className="mb-4 md:mb-5 lg:mb-6"
