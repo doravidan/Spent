@@ -12,6 +12,34 @@ import type {
 } from "@/lib/types";
 import { BANK_PROVIDERS } from "@/lib/types";
 
+const OPERATIONAL_EXPENSE_FILTER = `
+  AND NOT EXISTS (
+    SELECT 1 FROM categories cx
+    WHERE cx.id = transactions.category_id
+      AND (
+        cx.name LIKE '%השקעות%'
+        OR cx.name LIKE '%מט״ח%'
+        OR cx.name LIKE '%מט"ח%'
+        OR cx.name LIKE '%ניירות%'
+        OR cx.name LIKE '%מניות%'
+      )
+  )
+`;
+
+const OPERATIONAL_EXPENSE_FILTER_FOR_T = `
+  AND NOT EXISTS (
+    SELECT 1 FROM categories cx
+    WHERE cx.id = t.category_id
+      AND (
+        cx.name LIKE '%השקעות%'
+        OR cx.name LIKE '%מט״ח%'
+        OR cx.name LIKE '%מט"ח%'
+        OR cx.name LIKE '%ניירות%'
+        OR cx.name LIKE '%מניות%'
+      )
+  )
+`;
+
 export function getCashFlow(
   workspaceId: number,
   from: string,
@@ -31,7 +59,8 @@ export function getCashFlow(
       `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ?
-         AND status = 'completed' AND kind = 'expense'`
+         AND status = 'completed' AND kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER}`
     )
     .get(workspaceId, from, to) as { total: number };
   return {
@@ -66,7 +95,8 @@ export function getHistoricalTrend(
     `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total
      FROM transactions
      WHERE workspace_id = ? AND date >= ? AND date <= ?
-       AND status = 'completed' AND kind = 'expense'`
+       AND status = 'completed' AND kind = 'expense'
+       ${OPERATIONAL_EXPENSE_FILTER}`
   );
 
   return months.map((m) => {
@@ -235,12 +265,13 @@ export function getCategorySnapshot(
 
   const spendRows = db
     .prepare(
-      `SELECT category_id as categoryId, SUM(ABS(charged_amount)) as amount
-       FROM transactions
-       WHERE workspace_id = ? AND date >= ? AND date <= ?
-         AND status = 'completed' AND kind = 'expense'
-         AND category_id IS NOT NULL
-       GROUP BY category_id`
+      `SELECT t.category_id as categoryId, SUM(ABS(t.charged_amount)) as amount
+       FROM transactions t
+       WHERE t.workspace_id = ? AND t.date >= ? AND t.date <= ?
+         AND t.status = 'completed' AND t.kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER_FOR_T}
+         AND t.category_id IS NOT NULL
+       GROUP BY t.category_id`
     )
     .all(workspaceId, from, to) as Array<{ categoryId: number; amount: number }>;
 

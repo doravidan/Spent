@@ -263,9 +263,10 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
     existing.count += 1;
     existing.from = existing.from < tx.date ? existing.from : tx.date;
     existing.to = existing.to > tx.date ? existing.to : tx.date;
-    if (tx.charged_amount > 0) existing.income += tx.charged_amount;
-    else existing.expense += Math.abs(tx.charged_amount);
-    existing.net += tx.charged_amount;
+    const movement = classify(tx);
+    if (movement.kind === "income") existing.income += tx.charged_amount;
+    if (movement.kind === "expense") existing.expense += Math.abs(tx.charged_amount);
+    if (movement.kind === "income" || movement.kind === "expense") existing.net += tx.charged_amount;
     accountsMap.set(key, existing);
   }
 
