@@ -108,6 +108,27 @@ function fallbackExpenseCategoryName(description: string): string {
   const text = description.toLowerCase();
   const includes = (words: string[]) => words.some((w) => text.includes(w));
 
+  if (includes(["אושר עד", "פרש מרקט", "בר כל טוב", "הקצבים", "מאפיית", "ממתקים", "סיבוס"])) {
+    return "Groceries";
+  }
+  if (includes(["spotify", "netflix", "ionos", "וויקום", "wecom"])) {
+    return "Subscriptions";
+  }
+  if (includes(["amazon", "alipay", "swappedcom", "ארכה", "פוליצר", "בוה"])) {
+    return "Shopping";
+  }
+  if (includes(["מי חדרה", "חשמל", "ארנונה", "גז "])) {
+    return "Bills & Utilities";
+  }
+  if (includes(["איילון", "ביטוח"])) {
+    return "Insurance";
+  }
+  if (includes(["צמיגים", "דלק", "חניה", "כביש 6"])) {
+    return "Transport";
+  }
+  if (includes(["חבד", 'חב"ד', "יודיאקה", "אהבת ישראל", "דבר מלכות", "התורה והארץ", "תרומה", "בית חב", "נווה שלום"])) {
+    return "Gifts & Donations";
+  }
   if (includes(["כ.א.ל", "כאל", "ישראכרט", "מקס", "ויזה", "כרטיס", "דיירקט", "cal", "isracard", "max"])) {
     return "חיובי כרטיס אישי";
   }
@@ -115,7 +136,6 @@ function fallbackExpenseCategoryName(description: string): string {
     return "השקעות ומט״ח";
   }
   if (includes(["משכנתא"])) return "משכנתא";
-  if (includes(['תרומה', 'חב"ד', 'בית חב', 'נווה שלום'])) return "תרומות";
   if (includes(["דמי מנוי"])) return "דמי מנוי בנק";
   if (includes(["עמלה", "ריבית", "מס ", "אשראי"])) return "עמלות וריבית בנק";
   return "העברות ושיקים לבדיקה";

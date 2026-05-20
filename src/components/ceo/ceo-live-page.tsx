@@ -138,7 +138,7 @@ export function CeoLivePage() {
               {(data?.dataQuality ?? []).map((q) => <QualityRow key={q.text} item={q} />)}
               <div className="rounded-2xl bg-white/[0.04] p-4 text-sm leading-7 text-[#d9cfb8]">
                 <FileText className="mb-2 h-5 w-5 text-[#f2d28b]" />
-                המערכת מראה איפה חסר פירוט: חיובי כרטיסים, העברות ושיקים. אלה לא “הוצאה אחת” — הם תור עבודה לפירוק.
+                המערכת מפרידה בין עסקאות כרטיס שכבר יש להן ספקים לבין חיובים מרוכזים שעדיין צריך לחבר/לייבא להם פירוט.
               </div>
               {(integrations.data ?? []).map((item) => <ConnectionRow key={item.provider} item={item} />)}
             </div>

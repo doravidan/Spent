@@ -183,6 +183,31 @@ function includesAny(text: string, needles: string[]) {
   return needles.some((n) => text.includes(n));
 }
 
+function detailedCardBucket(text: string, scope: FinanceScope): Omit<BucketSummary, "amount" | "projectedAmount" | "baseline" | "variance" | "count" | "topExamples"> | null {
+  if (includesAny(text, ["אושר עד", "פרש מרקט", "בר כל טוב", "הקצבים", "מאפיית", "ממתקים", "סיבוס"])) {
+    return { name: "מזון וסופר", scope, kind: "expense", controllability: "flexible", note: "פירוט כרטיס קיים — קניות מזון/סופר." };
+  }
+  if (includesAny(text, ["spotify", "netflix", "ionos", "וויקום", "wecom"])) {
+    return { name: "מנויים ותקשורת", scope, kind: "expense", controllability: "flexible", note: "מנויים/תקשורת שניתן לבדוק ולצמצם." };
+  }
+  if (includesAny(text, ["amazon", "alipay", "swappedcom", "ארכה", "פוליצר", "בוה"])) {
+    return { name: "קניות וציוד", scope, kind: "expense", controllability: "flexible", note: "קניות/ציוד — יעד טוב לבדיקה לפי צורך." };
+  }
+  if (includesAny(text, ["מי חדרה", "חשמל", "ארנונה", "גז "])) {
+    return { name: "חשבונות בית", scope, kind: "expense", controllability: "fixed", note: "חשבון בית/תשתית — קשיח יחסית." };
+  }
+  if (includesAny(text, ["איילון", "ביטוח"])) {
+    return { name: "ביטוחים ובריאות", scope, kind: "expense", controllability: "fixed", note: "ביטוח/בריאות — לבדוק כפילויות, לא לחתוך בלי בדיקה." };
+  }
+  if (includesAny(text, ["צמיגים", "דלק", "חניה", "כביש 6"])) {
+    return { name: "רכב ותחבורה", scope, kind: "expense", controllability: "flexible", note: "רכב/תחבורה — לבדוק חריגות." };
+  }
+  if (includesAny(text, ["חבד", "חב\"ד", "יודיאקה", "אהבת ישראל", "דבר מלכות", "התורה והארץ"])) {
+    return { name: "תרומות וקהילה", scope, kind: "expense", controllability: "flexible", note: "תרומות/קהילה — לקבוע תקרה חודשית אם צריך." };
+  }
+  return null;
+}
+
 function classify(tx: TxRow): Omit<BucketSummary, "amount" | "projectedAmount" | "baseline" | "variance" | "count" | "topExamples"> {
   const text = `${tx.description} ${tx.memo ?? ""}`.toLowerCase();
   const scope = scopeForProvider(tx.provider);
@@ -199,7 +224,10 @@ function classify(tx: TxRow): Omit<BucketSummary, "amount" | "projectedAmount" |
 
   if (includesAny(text, ["רכישת מטח", "עמלה בני\"ע", "ניירות", "ני\"ע", "מיקרון", "אינטל", "סופר מיקרו", "micron", "עמלת חליפין", "מטח", "מט\""])) return { name: "מניות / מט״ח / השקעות", scope, kind: "asset", controllability: "asset", note: "פעילות השקעות והמרות — מחוץ להוצאות מחיה." };
   if (includesAny(text, ["משכנתא"])) return { name: "משכנתא ודיור קבוע", scope: "personal", kind: "expense", controllability: "fixed", note: "קבוע/קשיח — לא מכפילים בתחזית אמצע חודש." };
-  if (includesAny(text, ["כ.א.ל", "כאל", "ישראכרט", "מקס", "ויזה", "כרטיס", "דיירקט", "מכאל", "ממקס"])) return { name: "חיובי כרטיסים — פירוט חסר", scope, kind: "expense", controllability: "review", note: "חיוב מרוכז. צריך פירוט כרטיס/חשבוניות כדי להבין ספקים אמיתיים." };
+  const cardDetail = detailedCardBucket(text, scope);
+  if (cardDetail) return cardDetail;
+  if (includesAny(text, ["כ.א.ל", "כאל", "חיוב לכרטיס ויזה", "מכאל"])) return { name: "תשלום כרטיס אשראי — כאל/ויזה", scope, kind: "transfer", controllability: "review", note: "סילוק כרטיס מהבנק. הפירוט מגיע מעסקאות כאל ולכן לא נספר כהוצאה נוספת." };
+  if (includesAny(text, ["ישראכרט", "מקס", "דיירקט", "ממקס"])) return { name: "כרטיסים שעדיין בלי פירוט ספקים", scope, kind: "expense", controllability: "review", note: "חיוב מרוכז ללא עסקאות ספק מפורקות במערכת. צריך לחבר או לייבא פירוט כרטיס." };
   if (includesAny(text, ["בית חב", "חב\"ד", "תרומה", "נווה שלום"])) return { name: "תרומות", scope: "personal", kind: "expense", controllability: "flexible", note: "נשלט — אפשר לקבוע תקרה שבועית/חודשית." };
   if (includesAny(text, ["שיק", "הע. ל", "הו\"ק", "העברה ל"])) return { name: "העברות / שיקים לאנשים", scope, kind: "expense", controllability: "review", note: "צריך לוודא עסקי/פרטי ומה מטרת התשלום." };
   if (includesAny(text, ["דמי מנוי", "one"])) return { name: "עמלות ומנויים בנקאיים", scope, kind: "expense", controllability: "flexible", note: "עלות שירות/מנוי — לבדיקה וחיסכון קטן." };
@@ -231,7 +259,7 @@ function forecastBucket(b: BucketSummary, progressRatio: number): number {
 function decisionFor(row: SmartBudgetRow): string {
   if (row.kind === "asset") return "להשאיר מחוץ לתזרים — זה נכס/השקעה, לא הוצאה שוטפת.";
   if (row.kind === "income") return "לעקוב כהכנסה אמיתית; לא לערבב עם העברות פנימיות.";
-  if (row.name.includes("כרטיסים")) return "החלטה: להביא פירוט כרטיס/חשבוניות — בלי זה אי אפשר לחסוך חכם.";
+  if (row.name.includes("כרטיסים")) return "החלטה: לחבר/לייבא את פירוט הכרטיס הזה כדי להפוך חיוב מרוכז לספקים אמיתיים.";
   if (row.controllability === "fixed") return "קבוע/קשיח: לעקוב, לא להפוך להחלטת חיסכון שבועית.";
   if (row.controllability === "review") return "קודם לפרק ולסווג — לא להניח שזה חיסכון זמין עד שיודעים מה זה.";
   if (row.variance > 0) return `לשים תקרה לשבוע הקרוב: לקצץ בערך ${formatIls(Math.max(row.variance * 0.25, row.spent * 0.08))}.`;
@@ -357,7 +385,7 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
   const reviewCard = buckets.find((b) => b.name.includes("כרטיסים"));
   const biggestFlexible = buckets.filter((b) => b.kind === "expense" && b.controllability === "flexible" && !b.name.includes("כרטיסים")).sort((a, b) => b.variance - a.variance || b.amount - a.amount)[0];
   const opportunities: Opportunity[] = [];
-  if (reviewCard) opportunities.push({ title: "לפרק את חיובי הכרטיסים", detail: `יש ${formatIls(reviewCard.amount)} בחיובים מרוכזים. בלי פירוט כרטיס/חשבוניות אי אפשר לדעת באמת איפה לחסוך.`, monthlyImpact: Math.round(reviewCard.amount * 0.08), annualImpact: Math.round(reviewCard.amount * 0.08 * 12), scope: reviewCard.scope });
+  if (reviewCard) opportunities.push({ title: "לחבר פירוט לכרטיסים שנותרו מרוכזים", detail: `נשארו ${formatIls(reviewCard.amount)} בחיובי כרטיס בלי עסקאות ספק. כאל/ויזה שכבר מפורטים לא נספרים כאן כהוצאה כפולה.`, monthlyImpact: Math.round(reviewCard.amount * 0.08), annualImpact: Math.round(reviewCard.amount * 0.08 * 12), scope: reviewCard.scope });
   if (biggestFlexible) opportunities.push({ title: `לקבוע תקרה ל-${biggestFlexible.name}`, detail: `יעד ראשון ריאלי: הורדה של 10%–15% מהקטגוריה בלי לגעת במשכנתא/השקעות.`, monthlyImpact: Math.round(biggestFlexible.amount * 0.12), annualImpact: Math.round(biggestFlexible.amount * 0.12 * 12), scope: biggestFlexible.scope });
   opportunities.push({ title: "להפריד מניות מתזרים", detail: "פעילות מט״ח/ניירות ערך מוצגת כנכס/השקעה, לא כהוצאה שוטפת — זה מונע החלטות שגויות על החודש.", monthlyImpact: 0, annualImpact: 0, scope: "all" });
 
@@ -371,7 +399,7 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
   });
 
   const weeklyCoach: CoachAction[] = [
-    { title: "לפרק את הכרטיסים", detail: "להביא פירוט ישראכרט/מקס/כאל או חשבוניות כדי להפוך חיוב מרוכז לספקים אמיתיים.", amount: cardSettlements, checked: cardSettlements === 0 },
+    { title: "להשלים פירוט לכרטיסים המרוכזים", detail: "כאל/ויזה שכבר מחוברים מוצגים לפי ספקים. נשאר להשלים ישראכרט/מקס/דיירקט או לייבא חשבוניות.", amount: cardSettlements, checked: cardSettlements === 0 },
     { title: "לקבוע תקרה שבועית לגמיש", detail: `נשארו ${progress.remainingDays} ימים בחודש. קבע תקרה לשבוע לפי הקטגוריה הגמישה הגדולה ביותר.`, amount: biggestFlexible?.amount ?? 0, checked: false },
     { title: "להשאיר השקעות מחוץ להוצאות", detail: "בדוק את מניות/מט״ח בנפרד כדי לא לקבל החלטות צריכה על בסיס פעילות השקעה.", amount: investmentsAndFx, checked: investmentsAndFx > 0 },
   ];
@@ -379,13 +407,13 @@ export function getCeoFinance(workspaceId: number): CeoFinancePayload {
   const scoreBase = projectedNet >= 0 ? 74 : 46;
   const reviewPenalty = cardSettlements > 0 ? 10 : 0;
   const score = Math.max(0, Math.min(100, Math.round(scoreBase - reviewPenalty + Math.min(12, regularIncome / 5000))));
-  const health = { score, label: score >= 75 ? "בשליטה" : score >= 55 ? "דורש תשומת לב" : "לחץ תזרימי", tone: score >= 75 ? "good" as const : score >= 55 ? "warn" as const : "bad" as const, reason: projectedNet < 0 ? `תחזית נטו של ${formatIls(projectedNet)} עד סוף החודש.` : `תחזית נטו חיובית של ${formatIls(projectedNet)}, עם ${formatIls(cardSettlements)} שעדיין דורשים פירוט.` };
-  const story = `ב-${new Date(`${month}-01T00:00:00`).toLocaleDateString("he-IL", { month: "long" })} נכנסו ${formatIls(regularIncome)} כהכנסה שוטפת, יצאו ${formatIls(livingExpense)} כהוצאות מחיה/עסק, והתחזית לסוף החודש היא ${formatIls(projectedLivingExpense)} הוצאות ו-${formatIls(projectedNet)} נטו. ההפרדה הקריטית: ${formatIls(investmentsAndFx)} מניות/מט״ח מחוץ לתזרים, ו-${formatIls(cardSettlements)} חיובי כרטיסים שצריך לפרק.`;
+  const health = { score, label: score >= 75 ? "בשליטה" : score >= 55 ? "דורש תשומת לב" : "לחץ תזרימי", tone: score >= 75 ? "good" as const : score >= 55 ? "warn" as const : "bad" as const, reason: projectedNet < 0 ? `תחזית נטו של ${formatIls(projectedNet)} עד סוף החודש.` : `תחזית נטו חיובית של ${formatIls(projectedNet)}, עם ${formatIls(cardSettlements)} בכרטיסים שנותרו מרוכזים.` };
+  const story = `ב-${new Date(`${month}-01T00:00:00`).toLocaleDateString("he-IL", { month: "long" })} נכנסו ${formatIls(regularIncome)} כהכנסה שוטפת, יצאו ${formatIls(livingExpense)} כהוצאות מחיה/עסק, והתחזית לסוף החודש היא ${formatIls(projectedLivingExpense)} הוצאות ו-${formatIls(projectedNet)} נטו. ההפרדה הקריטית: ${formatIls(investmentsAndFx)} מניות/מט״ח מחוץ לתזרים, ו-${formatIls(cardSettlements)} בכרטיסים שעוד אין להם עסקאות ספק במערכת.`;
 
   const dataQuality: DataQualityItem[] = [
     { severity: "ok", text: "One Zero מסומן כעסקי; Mercantile מסומן כפרטי לפי ההנחיה שלך." },
     { severity: "ok", text: "משכורת פרטית שנכנסת בשבוע האחרון של החודש נספרת לחודש הבא כדי למנוע עיוות." },
-    { severity: cardSettlements > 0 ? "action" : "ok", text: cardSettlements > 0 ? "חיובי כרטיסים עדיין מרוכזים — צריך פירוט כרטיסים/חשבוניות כדי לראות ספקים אמיתיים." : "אין חיובי כרטיסים מרוכזים בחודש הנבחר." },
+    { severity: cardSettlements > 0 ? "action" : "ok", text: cardSettlements > 0 ? "יש עדיין כרטיסים מרוכזים ללא עסקאות ספק. כאל/ויזה שכבר מחוברים לא נספרים כהוצאה כפולה." : "אין חיובי כרטיסים מרוכזים בחודש הנבחר." },
     { severity: investmentsAndFx > 0 ? "ok" : "warning", text: investmentsAndFx > 0 ? "פעילות מניות/מט״ח מופרדת מהוצאות רגילות." : "לא זוהתה פעילות מניות/מט״ח בחודש הנבחר." },
   ];
 

@@ -151,8 +151,8 @@ function CommandCenter({ finance, home }: { finance?: CeoFinancePayload; home?: 
 
       <section className="grid gap-5 xl:grid-cols-3">
         <MoneyPathCard title="איך הכסף יוצא" icon={Route}>
-          <PaymentRow label="חיובי אשראי / חיובים מרוכזים" amount={cards} total={expenses + cards + transfers} detail="צריך פירוט כדי לדעת ספקים אמיתיים" tone="warn" />
-          <PaymentRow label="העברות בנקאיות / שיקים" amount={transfers} total={expenses + cards + transfers} detail="דורש סיווג: עסקי, משפחה, ספקים או חד־פעמי" tone="review" />
+          <PaymentRow label="כרטיסים ללא עסקאות ספק" amount={cards} total={expenses + cards + transfers} detail="נשאר רק איפה שעדיין לא מחובר/מיובא פירוט הכרטיס" tone="warn" />
+          <PaymentRow label="העברות / שיקים / סילוקי כרטיס" amount={transfers} total={expenses + cards + transfers} detail="כולל תשלומי כרטיס שכבר יש להם פירוט ולכן לא נספרים כהוצאה כפולה" tone="review" />
           <PaymentRow label="הוצאות קבועות" amount={fixed} total={expenses} detail="משכנתא/קבועים — לא יעד חיסכון שבועי" tone="fixed" />
           <PaymentRow label="הוצאות משתנות" amount={flexible} total={expenses} detail="פה נמצא רוב החיסכון המיידי" tone="good" />
           <PaymentRow label="השקעות / מט״ח / מניות" amount={investments} total={expenses + investments} detail="מוצג בנפרד — לא הוצאה תזרימית" tone="asset" />
@@ -293,9 +293,9 @@ function MiniRows({ rows }: { rows: CeoFinancePayload["smartBudget"] }) {
 
 function AttentionQueue({ finance, home }: { finance?: CeoFinancePayload; home?: HomePayload }) {
   const items = [
-    { label: "חיובי אשראי שצריך לפרק", value: money(Number(finance?.totals.cardSettlements ?? 0)), detail: "בלי פירוט אין דרך להבין לאן הכסף באמת הולך" },
+    { label: "כרטיסים שעוד חסרים בהם ספקים", value: money(Number(finance?.totals.cardSettlements ?? 0)), detail: "כאל/ויזה שכבר מפורטים לא נספרים כאן; נשאר רק מה שעדיין מרוכז" },
     { label: "תנועות שסומנו לבדיקה", value: `${home?.needsAttention?.flagged ?? 0} תנועות`, detail: "לאשר/לתקן קטגוריה כדי לנקות רעש" },
-    { label: "העברות ושיקים", value: money(Number(finance?.totals.transfers ?? 0)), detail: "להפריד ספקים, משפחה והעברות פנימיות" },
+    { label: "העברות ושיקים", value: money(Number(finance?.totals.transfers ?? 0)), detail: "להפריד ספקים, משפחה, העברות פנימיות וסילוקי כרטיס" },
   ];
   return <div className="space-y-3">{items.map((i) => <div key={i.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><div className="flex items-center justify-between gap-3"><span className="font-medium">{i.label}</span><Badge variant="secondary">{i.value}</Badge></div><p className="mt-2 text-sm leading-6 text-[#b8ad99]">{i.detail}</p></div>)}</div>;
 }
