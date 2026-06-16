@@ -24,7 +24,7 @@ import {
   normalizeMerchant,
   incrementMerchantHits,
 } from "@/server/lib/merchant-memory";
-import { getAllCategories } from "@/server/db/queries/categories";
+import { getAllCategories, getCategoryByName } from "@/server/db/queries/categories";
 import { getRecentCorrections } from "@/server/db/queries/category-corrections";
 import { scrapeBank } from "@/server/scrapers";
 import {
@@ -33,6 +33,7 @@ import {
 } from "@/server/scrapers/one-zero";
 import { createAIProvider } from "@/server/ai/factory";
 import { ensureOllamaRunning } from "@/server/ai/ollama-manager";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { toLocalISODate } from "@/server/lib/date-utils";
 import { listAllWorkspaceIds } from "@/server/lib/workspace-context";
 import { getWorkspace } from "@/server/db/queries/workspaces";
@@ -79,16 +80,91 @@ export function friendlyAIError(err: unknown, modelName: string): string {
   if (/ECONNREFUSED|fetch failed/i.test(msg)) {
     return "Ollama is not reachable. Make sure it's installed and that no firewall is blocking port 11434.";
   }
-  if (/Anthropic|api[_-]?key|401|403/i.test(msg)) {
-    return "Claude API request was rejected. Check your API key in settings.";
+  if (/401|403/i.test(msg)) {
+    return "AI request was rejected. Check your local AI settings.";
   }
   return `AI categorization failed: ${msg}`;
+}
+
+function looksLikeExpiredOneZeroToken(message: string): boolean {
+  return /idToken|otp|token|long.?term|two.?factor/i.test(message);
+}
+
+function hebrewScrapeError(provider: BankProvider, message: string): string {
+  if (provider === "oneZero" && looksLikeExpiredOneZeroToken(message)) {
+    return "הטוקן השמור של One Zero פג או נדחה. מחקתי אותו — לחץ סנכרון שוב, הזן את קוד ה-SMS, ואשמור טוקן חדש מקומית.";
+  }
+  return message;
 }
 
 function supportsProgrammaticTwoFactor(provider: BankProvider): boolean {
   return Boolean(
     BANK_PROVIDERS.find((b) => b.id === provider)?.supportsProgrammaticTwoFactor
   );
+}
+
+
+function fallbackExpenseCategoryName(description: string): string {
+  const text = description.toLowerCase();
+  const includes = (words: string[]) => words.some((w) => text.includes(w));
+
+  if (includes(["אושר עד", "פרש מרקט", "בר כל טוב", "הקצבים", "מאפיית", "ממתקים", "סיבוס"])) {
+    return "Groceries";
+  }
+  if (includes(["spotify", "netflix", "ionos", "וויקום", "wecom"])) {
+    return "Subscriptions";
+  }
+  if (includes(["amazon", "alipay", "swappedcom", "ארכה", "פוליצר", "בוה"])) {
+    return "Shopping";
+  }
+  if (includes(["מי חדרה", "חשמל", "ארנונה", "גז "])) {
+    return "Bills & Utilities";
+  }
+  if (includes(["איילון", "ביטוח"])) {
+    return "Insurance";
+  }
+  if (includes(["צמיגים", "דלק", "חניה", "כביש 6"])) {
+    return "Transport";
+  }
+  if (includes(["חבד", 'חב"ד', "יודיאקה", "אהבת ישראל", "דבר מלכות", "התורה והארץ", "תרומה", "בית חב", "נווה שלום"])) {
+    return "Gifts & Donations";
+  }
+  if (includes(["כ.א.ל", "כאל", "ישראכרט", "מקס", "ויזה", "כרטיס", "דיירקט", "cal", "isracard", "max"])) {
+    return "חיובי כרטיס אישי";
+  }
+  if (includes(['רכישת מטח', 'ניירות', 'ני"ע', 'עמלה בני"ע', 'מטח', 'מט"ח', 'חליפין', 'micron', 'intel', 'מיקרון', 'אינטל'])) {
+    return "השקעות ומט״ח";
+  }
+  if (includes(["משכנתא"])) return "משכנתא";
+  if (includes(["דמי מנוי"])) return "דמי מנוי בנק";
+  if (includes(["עמלה", "ריבית", "מס ", "אשראי"])) return "עמלות וריבית בנק";
+  return "העברות ושיקים לבדיקה";
+}
+
+function fallbackCategorizeExpenses(workspaceId: number): number {
+  const ids = getUncategorizedIdsByKind(workspaceId, "expense");
+  if (ids.length === 0) return 0;
+
+  const txns = getTransactionsForCategorization(workspaceId, ids);
+  const updates: { id: number; categoryId: number; aiConfidence: number | null }[] = [];
+  const reviewFlags: { id: number; needsReview: boolean }[] = [];
+
+  for (const txn of txns) {
+    const categoryName = fallbackExpenseCategoryName(txn.description);
+    const category = getCategoryByName(workspaceId, categoryName);
+    if (!category) continue;
+    updates.push({ id: txn.id, categoryId: category.id, aiConfidence: null });
+    reviewFlags.push({
+      id: txn.id,
+      needsReview: categoryName.includes("לבדיקה") || categoryName.includes("כרטיס"),
+    });
+  }
+
+  if (updates.length > 0) {
+    batchUpdateCategories(workspaceId, updates);
+    batchSetNeedsReview(workspaceId, reviewFlags);
+  }
+  return updates.length;
 }
 
 interface RunScrapeArgs {
@@ -117,11 +193,29 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
   if (supportsProgrammaticTwoFactor(provider)) {
     const existingToken = credentials.otpLongTermToken;
     if (existingToken) {
-      return scrapeOneZeroWithToken({
-        email: credentials.email,
-        password: credentials.password,
-        otpLongTermToken: existingToken,
-        startDate,
+      try {
+        const tokenResult = await scrapeOneZeroWithToken({
+          email: credentials.email,
+          password: credentials.password,
+          otpLongTermToken: existingToken,
+          startDate,
+        });
+        if (tokenResult.success) return tokenResult;
+        if (!looksLikeExpiredOneZeroToken(tokenResult.errorMessage ?? "")) {
+          return tokenResult;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!looksLikeExpiredOneZeroToken(message)) throw err;
+      }
+
+      updateCredentialField(workspaceId, provider, "otpLongTermToken", null);
+      delete credentials.otpLongTermToken;
+      send("provider-2fa-token-expired", {
+        workspaceId,
+        workspaceName,
+        provider,
+        syncRunId,
       });
     }
 
@@ -129,15 +223,16 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
       return {
         success: false,
         accounts: [],
-        errorMessage: "Email and password are required for One Zero.",
+        errorMessage: "חסרים אימייל או סיסמה עבור One Zero.",
       };
     }
-    if (!credentials.phoneNumber) {
+    const phoneNumber = normalizeOneZeroPhoneNumber(credentials.phoneNumber ?? "");
+    if (!phoneNumber) {
       return {
         success: false,
         accounts: [],
         errorMessage:
-          "Phone number is required to receive the One Zero 2FA code.",
+          "חסר מספר טלפון לקבלת קוד SMS מ-One Zero. אפשר להזין 05... או ‎+972...‎.",
       };
     }
 
@@ -146,7 +241,7 @@ async function runScrapeForProvider(args: RunScrapeArgs): Promise<ScrapeResult> 
     const result = await scrapeOneZeroFirstTime({
       email: credentials.email,
       password: credentials.password,
-      phoneNumber: credentials.phoneNumber,
+      phoneNumber,
       startDate,
       awaitOtp: async () => {
         send("provider-2fa-needed", {
@@ -222,13 +317,17 @@ async function syncOneProvider(
   }
 
   if (!result.success) {
-    failSyncRun(syncRunId, result.errorMessage ?? "Scraping failed");
+    const errorMessage = hebrewScrapeError(
+      provider,
+      result.errorMessage ?? "הסנכרון נכשל"
+    );
+    failSyncRun(syncRunId, errorMessage);
     return {
       provider,
       ok: false,
       added: 0,
       updated: 0,
-      errorMessage: result.errorMessage ?? "Scraping failed",
+      errorMessage,
       syncRunId,
     };
   }
@@ -383,6 +482,18 @@ export async function syncWorkspace(
     aiWarning =
       "AI provider not connected — new transactions weren't auto-categorized.";
   }
+  const fallbackCategorizedBeforeAi = fallbackCategorizeExpenses(workspaceId);
+  if (fallbackCategorizedBeforeAi > 0) {
+    categorized += fallbackCategorizedBeforeAi;
+    send("stage", {
+      workspaceId,
+      workspaceName,
+      stage: "fallback-categorized",
+      count: fallbackCategorizedBeforeAi,
+      kind: "expense",
+    });
+  }
+
   if (aiProvider) {
     if (settings.aiProvider === "ollama") {
       send("stage", {

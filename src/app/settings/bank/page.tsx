@@ -67,7 +67,7 @@ export default function BankSettingsPage() {
   return (
     <>
       <SectionShell
-        title="Bank accounts"
+        title="חשבונות בנק"
         description="Connected institutions. Credentials are encrypted with AES-256-GCM and never leave your machine."
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -278,9 +278,9 @@ function SyncButton({
 function formatRelative(iso: string): string {
   const then = new Date(iso.replace(" ", "T") + "Z");
   const diffSec = (Date.now() - then.getTime()) / 1000;
-  if (diffSec < 60) return "just now";
-  if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.round(diffSec / 3600)}h ago`;
-  if (diffSec < 86400 * 7) return `${Math.round(diffSec / 86400)}d ago`;
-  return then.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffSec < 60) return "כרגע";
+  if (diffSec < 3600) return `לפני ${Math.round(diffSec / 60)} דק׳`;
+  if (diffSec < 86400) return `לפני ${Math.round(diffSec / 3600)} שעות`;
+  if (diffSec < 86400 * 7) return `לפני ${Math.round(diffSec / 86400)} ימים`;
+  return then.toLocaleDateString("he-IL", { month: "short", day: "numeric" });
 }

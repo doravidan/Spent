@@ -88,27 +88,27 @@ export function pacePhrase(
   monthLabel: string
 ): string {
   if (totalBudget <= 0) {
-    return `You've spent ${formatILS(displaySpent)} this ${monthLabel}.`;
+    return `הוצאת ${formatILS(displaySpent)} בחודש ${monthLabel}.`;
   }
   const pctSpent = (budgetedSpent / totalBudget) * 100;
   const delta = pctSpent - timeElapsedPercent;
-  const lead = `You've spent ${formatILS(budgetedSpent)} of your ${formatILS(totalBudget)} ${monthLabel} target`;
+  const lead = `הוצאת ${formatILS(budgetedSpent)} מתוך יעד ${formatILS(totalBudget)} לחודש ${monthLabel}`;
 
   if (pctSpent > 100) {
-    return `${lead} — over budget, time to slow down.`;
+    return `${lead} — מעל התקציב, כדאי להאט.`;
   }
   if (delta >= 25) {
-    return `${lead} — a touch over schedule, but easy to recover.`;
+    return `${lead} — מעט מעל הקצב, עדיין קל לתקן.`;
   }
   if (delta <= -25) {
-    return `${lead} — well under schedule.`;
+    return `${lead} — הרבה מתחת לקצב.`;
   }
   if (delta <= -10) {
-    return `${lead} — ahead of schedule.`;
+    return `${lead} — לפני הקצב.`;
   }
-  return `${lead} — on schedule.`;
+  return `${lead} — בקצב תקין.`;
 }
 
 function formatILS(amount: number): string {
-  return `₪${Math.round(amount).toLocaleString("en-IL")}`;
+  return `₪${Math.round(amount).toLocaleString("he-IL")}`;
 }

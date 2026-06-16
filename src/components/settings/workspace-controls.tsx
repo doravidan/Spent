@@ -41,7 +41,7 @@ export function WorkspaceNameCard() {
   const { active } = useActiveWorkspace();
   if (!active) {
     return (
-      <SettingCard title="Workspace name">
+      <SettingCard title="שם סביבת עבודה">
         <div className="text-sm text-muted-foreground">Loading…</div>
       </SettingCard>
     );
@@ -68,7 +68,7 @@ function WorkspaceNameCardInner({ workspace }: { workspace: Workspace }) {
 
   return (
     <SettingCard
-      title="Workspace name"
+      title="שם סביבת עבודה"
       description="Shown in the sidebar switcher. Visible only to you."
     >
       <div className="flex flex-wrap items-end gap-3">
@@ -181,7 +181,7 @@ function DangerCard({
               onClick={() => del.mutate()}
               disabled={del.isPending}
             >
-              {del.isPending ? "Deleting…" : "Delete workspace"}
+              {del.isPending ? "Deleting…" : "מחיקת סביבה"}
             </Button>
           </DialogFooter>
         </DialogContent>

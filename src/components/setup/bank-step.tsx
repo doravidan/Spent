@@ -18,6 +18,7 @@ import {
   getIntegrationCredentials,
   deleteIntegration,
 } from "@/lib/api";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { ProviderBadge } from "./provider-badge";
 import { TwoFactorSection } from "./two-factor-section";
 
@@ -44,18 +45,22 @@ export function BankStep({ onComplete }: BankStepProps) {
   const [filter, setFilter] = useState<"all" | BankKind>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [sub, setSub] = useState<Sub | null>(null);
+  const [sub, setSub] = useState<Sub>("pick");
 
-  const { data: integrations = [], isPending, refetch } = useQuery({
+  const { data: integrations = [], refetch } = useQuery({
     queryKey: ["integrations"],
     queryFn: listIntegrations,
   });
 
-  // Pick the right starting view once we've heard back from the query
+  // Never render an empty setup screen while the integrations query is booting.
+  // Start with the provider picker immediately, then switch to the connected
+  // accounts view only when we actually know accounts exist.
   useEffect(() => {
-    if (isPending || sub != null) return;
-    setSub(integrations.length > 0 ? "ready" : "pick");
-  }, [isPending, integrations.length, sub]);
+    if (sub === "pick" && integrations.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- move from initial picker to connected-account summary once async data arrives.
+      setSub("ready");
+    }
+  }, [integrations.length, sub]);
 
   const connectedIds = new Set(integrations.map((i) => i.provider));
   const selected = selectedId
@@ -102,8 +107,6 @@ export function BankStep({ onComplete }: BankStepProps) {
       setSub("pick");
     }
   }
-
-  if (sub == null) return null;
 
   const readyCountLabel =
     integrations.length === 1
@@ -482,10 +485,12 @@ function CredentialForm({
 
   const valid = info.credentialFields.every((f) => {
     const v = credentials[f.key]?.trim() ?? "";
+    if (isEdit && !v) return true;
     if (!v) return false;
     if (f.exactLength != null && v.length !== f.exactLength) return false;
     return true;
   });
+  const usesSyncOtpFlow = Boolean(info.supportsProgrammaticTwoFactor);
 
   const handleTest = async () => {
     setTesting(true);
@@ -548,7 +553,7 @@ function CredentialForm({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="סגירה"
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
         >
           ✕
@@ -598,6 +603,13 @@ function CredentialForm({
                     setCredentials((prev) => ({
                       ...prev,
                       [field.key]: next,
+                    }));
+                  }}
+                  onBlur={() => {
+                    if (info.id !== "oneZero" || field.key !== "phoneNumber") return;
+                    setCredentials((prev) => ({
+                      ...prev,
+                      [field.key]: normalizeOneZeroPhoneNumber(prev[field.key] ?? ""),
                     }));
                   }}
                   placeholder={field.placeholder ?? field.label}
@@ -656,15 +668,25 @@ function CredentialForm({
             )}
           </AnimatePresence>
 
+          {usesSyncOtpFlow ? (
+            <div className="rounded-md bg-muted/40 p-3 text-[11px] text-muted-foreground">
+              One Zero is verified during Sync because the bank sends an SMS
+              code. Save the credentials, then run Sync; Spent will ask for the
+              code and store the long-term token locally.
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={handleTest}
-              disabled={!valid || testing || saving}
-              className="flex-1 rounded-full"
-            >
-              {testing ? "Testing..." : "Test connection"}
-            </Button>
+            {!usesSyncOtpFlow ? (
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={!valid || testing || saving}
+                className="flex-1 rounded-full"
+              >
+                {testing ? "Testing..." : "Test connection"}
+              </Button>
+            ) : null}
             <Button
               onClick={handleSave}
               disabled={!valid || saving}

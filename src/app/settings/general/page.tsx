@@ -44,7 +44,7 @@ export default function GeneralSettingsPage() {
 
   return (
     <SectionShell
-      title="General"
+      title="כללי"
       description="Workspace name, monthly target, sync window, and when your monthly cycle resets."
     >
       <WorkspaceNameCard />
@@ -104,7 +104,7 @@ function MonthlyTargetCard({
   return (
     <div id="section-monthly-target">
       <SettingCard
-        title="Monthly target"
+        title="יעד חודשי"
         description="A single number that drives your dashboard pace verdict. Leave blank to hide the verdict."
       >
         <div className="space-y-2 max-w-xs">
@@ -129,7 +129,7 @@ function MonthlyTargetCard({
             </p>
           ) : (
             <p className="text-[11px] text-muted-foreground">
-              No prior month history yet. Set a target you'd like to aim for.
+              No prior month history yet. Set a target you&apos;d like to aim for.
             </p>
           )}
         </div>

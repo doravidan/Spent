@@ -15,7 +15,7 @@ export function HistoricalTrendCard({ data }: Props) {
 
   if (!hasData) {
     return (
-      <CardShell label="Last 8 months">
+      <CardShell label="8 חודשים אחרונים">
         <div className="flex flex-1 items-center justify-center py-6 text-sm text-muted-foreground">
           Not enough history yet.
         </div>
@@ -27,7 +27,7 @@ export function HistoricalTrendCard({ data }: Props) {
   const active = hoverIdx != null ? data[hoverIdx] : data[data.length - 1];
 
   return (
-    <CardShell label="Last 8 months">
+    <CardShell label="8 חודשים אחרונים">
       <div className="flex flex-1 flex-col justify-between gap-4">
         <div>
           <div className="flex items-baseline gap-2">
@@ -36,7 +36,7 @@ export function HistoricalTrendCard({ data }: Props) {
             </span>
             <span className="text-xs text-muted-foreground">
               {active.label}
-              {active.isCurrent ? " (so far)" : ""}
+              {active.isCurrent ? " (עד עכשיו)" : ""}
             </span>
           </div>
         </div>

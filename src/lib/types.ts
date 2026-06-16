@@ -256,9 +256,11 @@ export interface SetupStatus {
 
 export interface AppSettings {
   monthsToSync: number;
-  aiProvider: "claude" | "ollama" | "none";
+  aiProvider: "ollama" | "openrouter" | "none";
   ollamaUrl: string;
   ollamaModel: string;
+  openrouterModel: string;
+  hasOpenrouterKey: boolean;
   showBrowser: boolean;
   paydayDay: number;
   monthlyTarget: number | null;
@@ -470,10 +472,10 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
       { key: "password", label: "Password", type: "password" },
       {
         key: "num",
-        label: "Account Number",
-        type: "text",
-        placeholder: "Your Discount account number",
-        numeric: true,
+        label: "User Identification Code",
+        type: "password",
+        placeholder: "The extra Discount login code",
+        hint: "This is the user identification code from the Discount login form. It can contain letters and symbols, like a password — not only digits, and not your bank account number.",
       },
     ],
     enabled: true,
@@ -497,10 +499,10 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
       { key: "password", label: "Password", type: "password" },
       {
         key: "num",
-        label: "Account Number",
-        type: "text",
-        placeholder: "Your Mercantile account number",
-        numeric: true,
+        label: "User Identification Code",
+        type: "password",
+        placeholder: "The extra Mercantile login code",
+        hint: "This is the user identification code from the Mercantile login form. It can contain letters and symbols, like a password — not only digits, and not your bank account number.",
       },
     ],
     enabled: true,
@@ -685,7 +687,7 @@ export const BANK_PROVIDERS: BankProviderInfo[] = [
         label: "Phone number",
         type: "tel",
         placeholder: "+972501234567",
-        hint: "Where the SMS one-time code will be sent. International format including the country code.",
+        hint: "Where the SMS one-time code will be sent. You can enter 05...; Spent will save it as +972... for One Zero.",
       },
     ],
     enabled: true,

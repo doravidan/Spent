@@ -22,15 +22,15 @@ const FIRST_RUN_STEPS = [
   { n: 1 as const, label: "Connect" },
   { n: 2 as const, label: "AI" },
   { n: 5 as const, label: "Target" },
-  { n: 3 as const, label: "Budgets" },
+  { n: 3 as const, label: "תקציבים" },
   { n: 4 as const, label: "Done" },
 ];
 
 const NEW_WORKSPACE_STEPS = [
-  { n: 0 as const, label: "Name" },
+  { n: 0 as const, label: "שם" },
   { n: 1 as const, label: "Connect" },
   { n: 5 as const, label: "Target" },
-  { n: 3 as const, label: "Budgets" },
+  { n: 3 as const, label: "תקציבים" },
   { n: 4 as const, label: "Done" },
 ];
 

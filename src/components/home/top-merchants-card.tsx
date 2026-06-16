@@ -11,7 +11,7 @@ interface Props {
 export function TopMerchantsCard({ items }: Props) {
   if (items.length === 0) {
     return (
-      <CardShell label="Top merchants">
+      <CardShell label="ספקים מובילים">
         <div className="flex flex-1 items-center justify-center py-6 text-sm text-muted-foreground">
           No spending this month yet.
         </div>
@@ -22,7 +22,7 @@ export function TopMerchantsCard({ items }: Props) {
   const max = items[0]?.total ?? 0;
 
   return (
-    <CardShell label="Top merchants this month">
+    <CardShell label="ספקים מובילים החודש">
       <ul className="flex flex-1 flex-col gap-3">
         {items.map((m, i) => {
           const widthPct = max > 0 ? (m.total / max) * 100 : 0;

@@ -92,7 +92,7 @@ export default function CategoriesSettingsPage() {
   return (
     <>
       <SectionShell
-        title="Categories"
+        title="קטגוריות"
         description="One place to set budgets, descriptions, and grouping. Click any category to edit it."
       >
         <div className="flex flex-wrap items-center gap-2">

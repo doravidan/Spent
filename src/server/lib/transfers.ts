@@ -7,6 +7,18 @@ export type TransactionKind = "expense" | "income" | "transfer";
 const BANK_PROVIDERS_SET: ReadonlySet<BankProvider> = new Set<BankProvider>([
   "hapoalim",
   "leumi",
+  "mizrahi",
+  "discount",
+  "mercantile",
+  "beinleumi",
+  "otsarHahayal",
+  "union",
+  "pagi",
+  "yahav",
+  "massad",
+  "beyahadBishvilha",
+  "behatsdaa",
+  "oneZero",
 ]);
 
 export const CREDIT_CARD_PAYMENT_PATTERNS: readonly RegExp[] = [
@@ -46,11 +58,11 @@ export function detectKind(
   provider: string,
   chargedAmount: number
 ): TransactionKind {
+  if (chargedAmount > 0) {
+    return "income";
+  }
   if (isBankProvider(provider) && matchesTransferPattern(description)) {
     return "transfer";
-  }
-  if (isBankProvider(provider) && chargedAmount > 0) {
-    return "income";
   }
   return "expense";
 }

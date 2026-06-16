@@ -23,8 +23,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spent",
-  description: "Personal finance tracker with AI-powered categorization",
+  title: "הפיננסים של דור",
+  description: "מרכז שליטה פיננסי מקומי לחשבונות וכרטיסים בישראל",
 };
 
 export default function RootLayout({
@@ -34,11 +34,12 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="he"
+      dir="rtl"
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col text-right">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <TooltipProvider>

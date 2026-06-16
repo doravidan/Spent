@@ -63,6 +63,76 @@ export function getSetupStatus() {
   return fetchJSON<SetupStatus>("/api/setup/status");
 }
 
+export function getCeoFinance() {
+  return fetchJSON<CeoFinancePayload>("/api/ceo/finance");
+}
+
+export interface CeoFinancePayload {
+  month: string;
+  monthLabel: string;
+  coverage: { from: string | null; to: string | null; transactionCount: number };
+  monthProgress: { day: number; daysInMonth: number; ratio: number; remainingDays: number };
+  health: { score: number; label: string; tone: "good" | "warn" | "bad"; reason: string };
+  story: string;
+  decision: {
+    title: string;
+    detail: string;
+    monthlyImpact: number;
+    annualImpact: number;
+    scope: "business" | "personal" | "all";
+    urgency: "low" | "medium" | "high";
+    why: string;
+  };
+  totals: Record<string, number>;
+  accounts: Array<{
+    provider: string;
+    providerName: string;
+    scope: "business" | "personal";
+    accountLabel: string;
+    count: number;
+    from: string;
+    to: string;
+    income: number;
+    expense: number;
+    net: number;
+  }>;
+  buckets: Array<{
+    name: string;
+    scope: "business" | "personal";
+    kind: "income" | "expense" | "asset" | "transfer";
+    controllability: "fixed" | "flexible" | "review" | "asset";
+    amount: number;
+    projectedAmount: number;
+    baseline: number;
+    variance: number;
+    count: number;
+    note: string;
+    topExamples: string[];
+  }>;
+  smartBudget: Array<{
+    name: string;
+    scope: "business" | "personal";
+    kind: "income" | "expense" | "asset" | "transfer";
+    controllability: "fixed" | "flexible" | "review" | "asset";
+    spent: number;
+    projected: number;
+    baseline: number;
+    variance: number;
+    decision: string;
+  }>;
+  monthly: Array<Record<string, number | string>>;
+  opportunities: Array<{
+    title: string;
+    detail: string;
+    monthlyImpact: number;
+    annualImpact: number;
+    scope: "business" | "personal" | "all";
+  }>;
+  weeklyCoach: Array<{ title: string; detail: string; amount: number; checked: boolean }>;
+  savingsScenarios: Array<{ label: string; monthly: number; quarterly: number; annual: number }>;
+  dataQuality: Array<{ severity: "ok" | "warning" | "action"; text: string }>;
+}
+
 export function saveBankCredentials(
   provider: string,
   credentials: Record<string, string>,
@@ -113,10 +183,11 @@ export function testBankConnection(provider: string) {
 }
 
 export function saveAIConfig(config: {
-  provider: "claude" | "ollama" | "none";
-  apiKey?: string;
+  provider: "ollama" | "openrouter" | "none";
   ollamaUrl?: string;
   ollamaModel?: string;
+  openrouterModel?: string;
+  openrouterApiKey?: string;
 }) {
   return fetchJSON<{ success: boolean }>("/api/setup/ai", {
     method: "POST",

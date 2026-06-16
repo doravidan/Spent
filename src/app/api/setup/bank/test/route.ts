@@ -1,14 +1,32 @@
 import { NextResponse } from "next/server";
-import { getBankCredentials } from "@/server/db/queries/bank-credentials";
-import { scrapeBank } from "@/server/scrapers";
-import type { BankProvider } from "@/lib/types";
+import {
+  getBankCredentials,
+  getRequiresManualTwoFactor,
+} from "@/server/db/queries/bank-credentials";
+import { isSupportedBankProvider, scrapeBank } from "@/server/scrapers";
 import { getWorkspaceIdFromRequest } from "@/server/lib/workspace-context";
 
 export async function POST(request: Request) {
   const workspaceId = getWorkspaceIdFromRequest(request);
   const body = (await request.json()) as { provider: string };
+  const provider = body.provider;
 
-  const credentials = getBankCredentials(workspaceId, body.provider);
+  if (!isSupportedBankProvider(provider)) {
+    return NextResponse.json(
+      { success: false, message: `Unsupported provider: ${provider}` },
+      { status: 400 }
+    );
+  }
+
+  if (provider === "oneZero") {
+    return NextResponse.json({
+      success: true,
+      message:
+        "One Zero credentials are saved. Run Sync to receive the SMS code and store the long-term token locally.",
+    });
+  }
+
+  const credentials = getBankCredentials(workspaceId, provider);
   if (!credentials) {
     return NextResponse.json(
       { success: false, message: "No credentials found for this provider" },
@@ -21,9 +39,10 @@ export async function POST(request: Request) {
 
   const result = await scrapeBank(
     workspaceId,
-    body.provider as BankProvider,
+    provider,
     credentials,
-    sevenDaysAgo
+    sevenDaysAgo,
+    { manualTwoFactor: getRequiresManualTwoFactor(workspaceId, provider) }
   );
 
   if (!result.success) {

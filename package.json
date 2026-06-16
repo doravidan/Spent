@@ -9,6 +9,7 @@
     "lint": "eslint",
     "security:audit": "npm audit --omit=dev",
     "security:outdated": "npm outdated",
+    "verify:bank-providers": "node scripts/verify-bank-providers.mjs",
     "setup": "node scripts/setup.mjs",
     "uninstall": "node scripts/uninstall.mjs",
     "service:install": "node scripts/service/install.mjs install",
@@ -25,7 +26,6 @@
     "menubar:install:windows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& './menubar/windows/build.ps1'; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $d = Join-Path $env:LOCALAPPDATA 'Programs\\Spent'; New-Item -ItemType Directory -Force -Path $d | Out-Null; Copy-Item -Force 'menubar/windows/build/Spent.exe' (Join-Path $d 'Spent.exe')\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.95.2",
     "@base-ui/react": "^1.4.1",
     "@tanstack/react-query": "^5.100.10",
     "better-sqlite3": "12.10.0",

@@ -22,6 +22,7 @@ import {
   testBankConnection,
   updateIntegrationSettings,
 } from "@/lib/api";
+import { normalizeOneZeroPhoneNumber } from "@/lib/credentials";
 import { TwoFactorSection } from "@/components/setup/two-factor-section";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 
@@ -152,6 +153,7 @@ function CredentialsForm({
     success: boolean;
     message: string;
   } | null>(null);
+  const usesSyncOtpFlow = Boolean(info.supportsProgrammaticTwoFactor);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -174,6 +176,7 @@ function CredentialsForm({
 
   const allValid = info.credentialFields.every((f) => {
     const v = credentials[f.key]?.trim() ?? "";
+    if (isEdit && !v) return true;
     if (!v) return false;
     if (f.exactLength != null && v.length !== f.exactLength) return false;
     return true;
@@ -267,6 +270,13 @@ function CredentialsForm({
                 if (field.maxLength) next = next.slice(0, field.maxLength);
                 setCredentials((prev) => ({ ...prev, [field.key]: next }));
               }}
+              onBlur={() => {
+                if (info.id !== "oneZero" || field.key !== "phoneNumber") return;
+                setCredentials((prev) => ({
+                  ...prev,
+                  [field.key]: normalizeOneZeroPhoneNumber(prev[field.key] ?? ""),
+                }));
+              }}
               placeholder={placeholder}
               aria-invalid={tooShort || undefined}
             />
@@ -302,14 +312,24 @@ function CredentialsForm({
         </div>
       )}
 
+      {usesSyncOtpFlow ? (
+        <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+          One Zero can only be verified during Sync because the bank sends an
+          SMS code. Save the credentials, then click Sync on the bank list; Spent
+          will ask for the code and store the long-term token locally.
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-        <Button
-          variant="outline"
-          onClick={handleTest}
-          disabled={!allValid || testing || saving}
-        >
-          {testing ? "Testing…" : "Test connection"}
-        </Button>
+        {!usesSyncOtpFlow ? (
+          <Button
+            variant="outline"
+            onClick={handleTest}
+            disabled={!allValid || testing || saving}
+          >
+            {testing ? "Testing…" : "Test connection"}
+          </Button>
+        ) : null}
         <Button onClick={handleSave} disabled={!allValid || saving || testing}>
           {saving ? "Saving…" : "Save"}
         </Button>
@@ -338,7 +358,7 @@ function RecentSyncCard({
         <div className="mt-0.5 text-xs text-muted-foreground">
           {lastSyncAt
             ? `Last synced ${formatRelative(lastSyncAt)}`
-            : "Never synced"}
+            : "לא סונכרן עדיין"}
         </div>
       </div>
     </div>
@@ -411,9 +431,9 @@ function DangerZone({
 function formatRelative(iso: string): string {
   const then = new Date(iso.replace(" ", "T") + "Z");
   const diffSec = (Date.now() - then.getTime()) / 1000;
-  if (diffSec < 60) return "just now";
-  if (diffSec < 3600) return `${Math.round(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.round(diffSec / 3600)}h ago`;
-  if (diffSec < 86400 * 7) return `${Math.round(diffSec / 86400)}d ago`;
-  return then.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffSec < 60) return "כרגע";
+  if (diffSec < 3600) return `לפני ${Math.round(diffSec / 60)} דק׳`;
+  if (diffSec < 86400) return `לפני ${Math.round(diffSec / 3600)} שעות`;
+  if (diffSec < 86400 * 7) return `לפני ${Math.round(diffSec / 86400)} ימים`;
+  return then.toLocaleDateString("he-IL", { month: "short", day: "numeric" });
 }

@@ -30,7 +30,7 @@ export default function DataSettingsPage() {
 
   return (
     <SectionShell
-      title="Data & privacy"
+      title="נתונים ופרטיות"
       description="Spent runs locally. Your credentials are encrypted at rest and never leave your machine."
     >
       {settings ? (
@@ -42,7 +42,7 @@ export default function DataSettingsPage() {
       )}
       <SettingCard
         title="How your data is stored"
-        description="Bank credentials and your Claude API key are encrypted with AES-256-GCM. The encryption key lives at data/.encryption-key on your machine (gitignored) and is auto-generated on first run. All transaction data lives in data/spent.db. To reset everything, stop the dev server and delete the data/ directory."
+        description="Bank credentials are encrypted with AES-256-GCM. The encryption key lives at data/.encryption-key on your machine (gitignored) and is auto-generated on first run. All transaction data lives in data/spent.db. AI categorization is local-only through Ollama or disabled. To reset everything, stop the dev server and delete the data/ directory."
       >
         <div className="rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
           <code>data/spent.db</code> · <code>data/.encryption-key</code>

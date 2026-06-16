@@ -4,8 +4,8 @@ import { getDb } from "../index";
 import type { AppSettings } from "@/lib/types";
 
 // Global settings live in the `settings` table and apply to every workspace.
-// Currently: ai_provider, ai_ollama_url, ai_ollama_model, plus the encrypted
-// Claude API key triple (ai_api_key_encrypted/iv/auth_tag).
+// Currently: ai_provider, ai_ollama_url, ai_ollama_model, ai_openrouter_model,
+// plus encrypted OpenRouter key triple.
 export function getGlobalSetting(key: string): string | null {
   const row = getDb()
     .prepare("SELECT value FROM settings WHERE key = ?")
@@ -56,8 +56,7 @@ export function setWorkspaceSetting(
     .run(workspaceId, key, value);
 }
 
-// Back-compat aliases so existing call sites that store the Claude API key
-// (settings.ts in src/server/ai/providers/claude.ts) keep working unchanged.
+// Back-compat aliases for existing call sites.
 export const getSetting = getGlobalSetting;
 export const setSetting = setGlobalSetting;
 
@@ -67,11 +66,24 @@ export function getAppSettings(workspaceId: number): AppSettings {
   const targetRaw = getWorkspaceSetting(workspaceId, "monthly_target");
   const target = targetRaw != null ? Number(targetRaw) : NaN;
   const storedTime = getGlobalSetting("auto_sync_time");
+  const rawAIProvider = getGlobalSetting("ai_provider");
+  const aiProvider: AppSettings["aiProvider"] =
+    rawAIProvider === "ollama" || rawAIProvider === "openrouter"
+      ? rawAIProvider
+      : "none";
+  const hasOpenrouterKey = Boolean(
+    process.env.OPENROUTER_API_KEY?.trim() ||
+      (getGlobalSetting("ai_openrouter_api_key_encrypted") &&
+        getGlobalSetting("ai_openrouter_api_key_iv") &&
+        getGlobalSetting("ai_openrouter_api_key_auth_tag"))
+  );
   return {
     monthsToSync: Number(getWorkspaceSetting(workspaceId, "months_to_sync") ?? "3"),
-    aiProvider: (getGlobalSetting("ai_provider") ?? "none") as AppSettings["aiProvider"],
+    aiProvider,
     ollamaUrl: getGlobalSetting("ai_ollama_url") ?? "http://localhost:11434",
     ollamaModel: getGlobalSetting("ai_ollama_model") ?? "llama3.2:3b",
+    openrouterModel: getGlobalSetting("ai_openrouter_model") ?? "qwen/qwen3-coder:free",
+    hasOpenrouterKey,
     showBrowser: getWorkspaceSetting(workspaceId, "scraper_show_browser") === "true",
     paydayDay: Number(getWorkspaceSetting(workspaceId, "payday_day") ?? "1"),
     monthlyTarget: Number.isFinite(target) && target > 0 ? target : null,
@@ -91,13 +103,21 @@ export function updateAppSettings(
       setWorkspaceSetting(workspaceId, "months_to_sync", String(settings.monthsToSync));
     }
     if (settings.aiProvider !== undefined) {
-      setGlobalSetting("ai_provider", settings.aiProvider);
+      setGlobalSetting(
+        "ai_provider",
+        settings.aiProvider === "ollama" || settings.aiProvider === "openrouter"
+          ? settings.aiProvider
+          : "none"
+      );
     }
     if (settings.ollamaUrl !== undefined) {
       setGlobalSetting("ai_ollama_url", settings.ollamaUrl);
     }
     if (settings.ollamaModel !== undefined) {
       setGlobalSetting("ai_ollama_model", settings.ollamaModel);
+    }
+    if (settings.openrouterModel !== undefined) {
+      setGlobalSetting("ai_openrouter_model", settings.openrouterModel);
     }
     if (settings.showBrowser !== undefined) {
       setWorkspaceSetting(

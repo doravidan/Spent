@@ -1,11 +1,11 @@
 import "server-only";
 
-import { CompanyTypes, createScraper } from "israeli-bank-scrapers";
+import { CompanyTypes, SCRAPERS, createScraper } from "israeli-bank-scrapers";
 import type { ScrapeResult, ScrapedTransaction } from "./types";
 import type { BankProvider } from "@/lib/types";
 import { getWorkspaceSetting } from "../db/queries/settings";
 
-export const PROVIDER_MAP: Record<string, CompanyTypes> = {
+export const PROVIDER_MAP = {
   isracard: CompanyTypes.isracard,
   cal: CompanyTypes.visaCal,
   max: CompanyTypes.max,
@@ -24,7 +24,33 @@ export const PROVIDER_MAP: Record<string, CompanyTypes> = {
   beyahadBishvilha: CompanyTypes.beyahadBishvilha,
   behatsdaa: CompanyTypes.behatsdaa,
   oneZero: CompanyTypes.oneZero,
-};
+} satisfies Record<BankProvider, CompanyTypes>;
+
+export function isSupportedBankProvider(provider: string): provider is BankProvider {
+  return Object.prototype.hasOwnProperty.call(PROVIDER_MAP, provider);
+}
+
+function requiredFieldsForProvider(provider: BankProvider): string[] {
+  const companyId = PROVIDER_MAP[provider];
+  const scraperInfo = SCRAPERS[companyId as keyof typeof SCRAPERS] as
+    | { loginFields?: string[] }
+    | undefined;
+  return scraperInfo?.loginFields ?? [];
+}
+
+function missingRequiredCredentials(
+  provider: BankProvider,
+  credentials: Record<string, string>
+): string[] {
+  // These are supplied internally by the One Zero OTP bridge and may be absent
+  // from stored credentials during the first sync.
+  const internallyProvided = new Set(["otpCodeRetriever", "otpLongTermToken"]);
+  return requiredFieldsForProvider(provider).filter((field) => {
+    if (internallyProvided.has(field)) return false;
+    const value = credentials[field];
+    return typeof value !== "string" || value.trim() === "";
+  });
+}
 
 function sanitizeError(error: unknown): string {
   if (!(error instanceof Error)) {
@@ -125,20 +151,46 @@ const FRIENDLY_ERRORS: Record<string, string> = {
     "The scraper failed unexpectedly. Run with 'Show browser during sync' enabled to see what's happening.",
 };
 
+function providerSpecificFriendlyError(
+  provider: BankProvider,
+  errorType: string,
+  detail: string
+): string | null {
+  if (
+    (provider === "discount" || provider === "mercantile") &&
+    errorType === "GENERAL_ERROR" &&
+    /UNKNOWN_ERROR/i.test(detail)
+  ) {
+    return `${provider === "mercantile" ? "Mercantile Discount" : "Bank Discount"} could not complete login. Check the ID, password, and especially the User Identification Code field — it must be the extra login code from the bank login form, not the account number. If the bank shows SMS/2FA or another challenge, enable 'This account requires 2FA' for this integration and sync again.`;
+  }
+
+  return null;
+}
+
 async function runScrape(
   provider: BankProvider,
   credentials: Record<string, string>,
   startDate: Date,
   showBrowser: boolean
 ): Promise<ScrapeResult> {
-  const companyId = PROVIDER_MAP[provider];
-  if (!companyId) {
+  if (!isSupportedBankProvider(provider)) {
     return {
       success: false,
       accounts: [],
       errorMessage: `Unsupported provider: ${provider}`,
     };
   }
+
+  const missing = missingRequiredCredentials(provider, credentials);
+  if (missing.length > 0) {
+    return {
+      success: false,
+      accounts: [],
+      errorMessage: `Missing required credential field(s) for ${provider}: ${missing.join(", ")}`,
+    };
+  }
+
+  const companyId = PROVIDER_MAP[provider];
 
   const chromiumArgs = [
     "--disable-blink-features=AutomationControlled",
@@ -175,12 +227,19 @@ async function runScrape(
     const detail = result.errorMessage
       ? sanitizeError(new Error(result.errorMessage))
       : errorType;
+    const providerSpecific = providerSpecificFriendlyError(
+      provider,
+      errorType,
+      detail
+    );
     return {
       success: false,
       accounts: [],
-      errorMessage: friendly
-        ? `${friendly} (${detail})`
-        : `Scraping failed: ${detail}`,
+      errorMessage:
+        providerSpecific ??
+        (friendly
+          ? `${friendly} (${detail})`
+          : `Scraping failed: ${detail}`),
     };
   }
 

@@ -25,7 +25,7 @@ export function AISection() {
   });
   if (!settings) {
     return (
-      <SectionShell title="AI & automation">
+      <SectionShell title="AI ואוטומציה">
         <SettingCard>
           <div className="text-sm text-muted-foreground">Loading...</div>
         </SettingCard>
@@ -34,7 +34,7 @@ export function AISection() {
   }
   return (
     <SectionShell
-      title="AI & automation"
+      title="AI ואוטומציה"
       description="How Spent organizes new transactions. Switch any time — your existing categorizations stay."
     >
       <AIForm key={settings.aiProvider} settings={settings} />
@@ -47,43 +47,47 @@ function AIForm({ settings }: { settings: AppSettings }) {
   const [provider, setProvider] = useState<AppSettings["aiProvider"]>(
     settings.aiProvider
   );
-  const [apiKey, setApiKey] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState(settings.ollamaUrl);
   const [ollamaModel, setOllamaModel] = useState(settings.ollamaModel);
+  const [openrouterModel, setOpenrouterModel] = useState(settings.openrouterModel);
+  const [openrouterApiKey, setOpenrouterApiKey] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
       saveAIConfig({
         provider,
-        apiKey: provider === "claude" && apiKey ? apiKey : undefined,
         ollamaUrl: provider === "ollama" ? ollamaUrl : undefined,
         ollamaModel: provider === "ollama" ? ollamaModel : undefined,
+        openrouterModel: provider === "openrouter" ? openrouterModel : undefined,
+        openrouterApiKey:
+          provider === "openrouter" && openrouterApiKey.trim()
+            ? openrouterApiKey.trim()
+            : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       toast.success("AI settings saved");
-      setApiKey("");
     },
   });
 
   return (
     <>
       <SettingCard
-        title="Provider"
+        title="ספק"
         description="Switch any time. Your existing categorizations are kept."
       >
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           {(
             [
-              {
-                id: "claude",
-                title: "Claude (Anthropic)",
-                desc: "Fast and accurate. Paid API. Bring your own API key.",
-              },
               {
                 id: "ollama",
                 title: "Ollama (Local)",
                 desc: "Free, private, runs on your machine. Needs a model download.",
+              },
+              {
+                id: "openrouter",
+                title: "OpenRouter (Free)",
+                desc: "Best free hosted model for categorization. Needs an OpenRouter API key.",
               },
               {
                 id: "none",
@@ -109,27 +113,6 @@ function AIForm({ settings }: { settings: AppSettings }) {
           ))}
         </div>
       </SettingCard>
-
-      {provider === "claude" && (
-        <SettingCard
-          title="Claude API key"
-          description="Paste your key from console.anthropic.com. It's encrypted at rest with AES-256-GCM."
-        >
-          <div className="space-y-2">
-            <Label htmlFor="claude-key">API key</Label>
-            <Input
-              id="claude-key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to keep your existing key.
-            </p>
-          </div>
-        </SettingCard>
-      )}
 
       {provider === "ollama" && (
         <SettingCard
@@ -185,12 +168,53 @@ function AIForm({ settings }: { settings: AppSettings }) {
         </SettingCard>
       )}
 
+      {provider === "openrouter" && (
+        <SettingCard
+          title="הגדרת OpenRouter"
+          description="Uses the free OpenRouter model qwen/qwen3-coder:free for structured finance categorization. Your key is encrypted locally."
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="openrouter-model">Model</Label>
+              <Input
+                id="openrouter-model"
+                value={openrouterModel}
+                onChange={(e) => setOpenrouterModel(e.target.value)}
+                placeholder="qwen/qwen3-coder:free"
+              />
+              <p className="text-xs text-muted-foreground">
+                Recommended free model: qwen/qwen3-coder:free — strong JSON/structured output and long context for transaction batches.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="openrouter-key">
+                OpenRouter API key {settings.hasOpenrouterKey ? "(saved)" : ""}
+              </Label>
+              <Input
+                id="openrouter-key"
+                type="password"
+                value={openrouterApiKey}
+                onChange={(e) => setOpenrouterApiKey(e.target.value)}
+                placeholder={
+                  settings.hasOpenrouterKey
+                    ? "Leave blank to keep saved key"
+                    : "sk-or-v1-..."
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Required for OpenRouter. Stored only in local encrypted settings or read from OPENROUTER_API_KEY.
+              </p>
+            </div>
+          </div>
+        </SettingCard>
+      )}
+
       <div className="flex justify-end">
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? "Saving..." : "Save AI settings"}
+          {mutation.isPending ? "Saving..." : "שמירת הגדרות AI"}
         </Button>
       </div>
     </>

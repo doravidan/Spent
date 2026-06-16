@@ -11,8 +11,39 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const DEFAULT_ALLOWED_HOSTS = new Set([
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "spent.local",
+  "100.73.214.19", // Dor's Tailscale IP for remote private access.
+  "dors-macbook-pro.tailf2d67b.ts.net", // Tailscale Serve HTTPS URL.
+]);
+
+function allowedHosts(): Set<string> {
+  const raw = process.env.SPENT_ALLOWED_HOSTS;
+  if (!raw) return DEFAULT_ALLOWED_HOSTS;
+  return new Set(
+    raw
+      .split(",")
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function requestHostname(request: NextRequest): string | null {
+  const host = request.headers.get("host")?.toLowerCase();
+  if (!host) return null;
+  if (host.startsWith("[")) return host.slice(1, host.indexOf("]"));
+  return host.split(":")[0] ?? null;
+}
 
 export function middleware(request: NextRequest) {
+  const hostname = requestHostname(request);
+  if (!hostname || !allowedHosts().has(hostname)) {
+    return new NextResponse("Forbidden: host not allowed", { status: 403 });
+  }
+
   if (!MUTATING_METHODS.has(request.method)) {
     return NextResponse.next();
   }
@@ -62,5 +93,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/:path*"],
 };

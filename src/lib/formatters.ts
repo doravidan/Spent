@@ -22,7 +22,7 @@ export function formatDate(isoDate: string): string {
 
 export function formatMonth(isoDate: string): string {
   const d = new Date(isoDate);
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("he-IL", { month: "short", year: "numeric" });
 }
 
 function toLocalDateString(d: Date): string {
@@ -45,7 +45,7 @@ export function getMonthRange(date: Date = new Date()): {
 }
 
 export function formatMonthLabel(date: Date): string {
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  return date.toLocaleDateString("he-IL", { month: "long", year: "numeric" });
 }
 
 export function addMonths(date: Date, months: number): Date {
@@ -56,27 +56,27 @@ export function addMonths(date: Date, months: number): Date {
 
 // The DB returns datetime('now') in UTC without a Z suffix.
 export function formatLastSync(iso: string | null): string {
-  if (!iso) return "Never synced";
+  if (!iso) return "לא סונכרן עדיין";
   const synced = new Date(iso + "Z").getTime();
   const ageMs = Date.now() - synced;
-  if (!Number.isFinite(ageMs) || ageMs < 0) return "just now";
+  if (!Number.isFinite(ageMs) || ageMs < 0) return "כרגע";
 
   const sec = Math.floor(ageMs / 1000);
-  if (sec < 60) return "just now";
+  if (sec < 60) return "כרגע";
   const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return `לפני ${min} דק׳`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `לפני ${hr} שעות`;
   const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return `לפני ${day} ימים`;
   const wk = Math.floor(day / 7);
-  if (wk < 5) return `${wk}w ago`;
+  if (wk < 5) return `לפני ${wk} שבועות`;
   const mo = Math.floor(day / 30);
-  return `${mo}mo ago`;
+  return `לפני ${mo} חודשים`;
 }
 
 export function formatJerusalemTimeOfDay(iso: string): string {
-  return new Intl.DateTimeFormat("en-IL", {
+  return new Intl.DateTimeFormat("he-IL", {
     timeZone: "Asia/Jerusalem",
     hour: "2-digit",
     minute: "2-digit",

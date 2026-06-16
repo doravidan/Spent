@@ -11,6 +11,34 @@ import type {
 } from "@/lib/types";
 export type TransactionKindFilter = "expense" | "income" | "all";
 
+const OPERATIONAL_EXPENSE_FILTER = `
+  AND NOT EXISTS (
+    SELECT 1 FROM categories cx
+    WHERE cx.id = transactions.category_id
+      AND (
+        cx.name LIKE '%השקעות%'
+        OR cx.name LIKE '%מט״ח%'
+        OR cx.name LIKE '%מט"ח%'
+        OR cx.name LIKE '%ניירות%'
+        OR cx.name LIKE '%מניות%'
+      )
+  )
+`;
+
+const OPERATIONAL_EXPENSE_FILTER_FOR_T = `
+  AND NOT EXISTS (
+    SELECT 1 FROM categories cx
+    WHERE cx.id = t.category_id
+      AND (
+        cx.name LIKE '%השקעות%'
+        OR cx.name LIKE '%מט״ח%'
+        OR cx.name LIKE '%מט"ח%'
+        OR cx.name LIKE '%ניירות%'
+        OR cx.name LIKE '%מניות%'
+      )
+  )
+`;
+
 interface RawTransaction {
   accountNumber: string;
   date: string;
@@ -310,6 +338,7 @@ export function getMonthlySummary(
          AND date >= date('now', '-' || ? || ' months')
          AND status = 'completed'
          AND kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER}
        GROUP BY month
        ORDER BY month ASC`
     )
@@ -329,6 +358,7 @@ export function getTopMerchants(
               COUNT(*) as count
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER}
        GROUP BY description
        ORDER BY amount DESC
        LIMIT ?`
@@ -352,6 +382,7 @@ export function getCategoryBreakdown(
        FROM transactions t
        LEFT JOIN categories c ON t.category_id = c.id
        WHERE t.workspace_id = ? AND t.date >= ? AND t.date <= ? AND t.status = 'completed' AND t.kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER_FOR_T}
        GROUP BY t.category_id
        ORDER BY amount DESC`
     )
@@ -376,6 +407,7 @@ export function getCategorySpendInRange(
               COUNT(*) as count
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense' AND category_id IS NOT NULL
+         ${OPERATIONAL_EXPENSE_FILTER}
        GROUP BY category_id`
     )
     .all(workspaceId, from, to) as CategorySpend[];
@@ -400,6 +432,7 @@ export function getTopMerchantPerCategory(
                 ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY SUM(ABS(charged_amount)) DESC) as rn
          FROM transactions
          WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense' AND category_id IS NOT NULL
+           ${OPERATIONAL_EXPENSE_FILTER}
          GROUP BY category_id, description
        )
        WHERE rn = 1`
@@ -479,7 +512,8 @@ export function getPeriodTotal(
     .prepare(
       `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total
        FROM transactions
-       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense'`
+       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER}`
     )
     .get(workspaceId, from, to) as { total: number };
   return row.total;
@@ -494,7 +528,8 @@ export function getPeriodCount(
     .prepare(
       `SELECT COUNT(*) as count
        FROM transactions
-       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense'`
+       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND kind = 'expense'
+         ${OPERATIONAL_EXPENSE_FILTER}`
     )
     .get(workspaceId, from, to) as { count: number };
   return row.count;
@@ -669,18 +704,21 @@ export function getTransactionsSummary(
     .prepare(
       `SELECT COALESCE(SUM(ABS(charged_amount)), 0) as total, COUNT(*) as count
        FROM transactions
-       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND charged_amount < 0`
+       WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND charged_amount < 0
+         ${OPERATIONAL_EXPENSE_FILTER}`
     )
     .get(workspaceId, from, to) as { total: number; count: number };
 
   const pickLargest = (sign: "income" | "expense"): TransactionWithCategory | null => {
     const cmp = sign === "income" ? "> 0" : "< 0";
+    const operationalFilter = sign === "expense" ? OPERATIONAL_EXPENSE_FILTER_FOR_T : "";
     const row = db
       .prepare(
         `SELECT t.*, c.name as category_name, c.color as category_color
          FROM transactions t
          LEFT JOIN categories c ON t.category_id = c.id
          WHERE t.workspace_id = ? AND t.date >= ? AND t.date <= ? AND t.status = 'completed' AND t.charged_amount ${cmp}
+         ${operationalFilter}
          ORDER BY ABS(t.charged_amount) DESC, t.id DESC
          LIMIT 1`
       )
@@ -695,6 +733,7 @@ export function getTransactionsSummary(
               COUNT(*) as count
        FROM transactions
        WHERE workspace_id = ? AND date >= ? AND date <= ? AND status = 'completed' AND charged_amount < 0
+         ${OPERATIONAL_EXPENSE_FILTER}
        GROUP BY description
        ORDER BY total DESC
        LIMIT 5`

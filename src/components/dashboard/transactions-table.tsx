@@ -57,16 +57,16 @@ type Kind = "expense" | "income" | "transfer";
 
 const OTHER_KINDS: Record<Kind, Array<{ value: Kind; label: string }>> = {
   expense: [
-    { value: "income", label: "Mark as income" },
-    { value: "transfer", label: "Mark as transfer" },
+    { value: "income", label: "סמן כהכנסה" },
+    { value: "transfer", label: "סמן כהעברה" },
   ],
   income: [
-    { value: "expense", label: "Mark as expense" },
-    { value: "transfer", label: "Mark as transfer" },
+    { value: "expense", label: "סמן כהוצאה" },
+    { value: "transfer", label: "סמן כהעברה" },
   ],
   transfer: [
-    { value: "expense", label: "Mark as expense" },
-    { value: "income", label: "Mark as income" },
+    { value: "expense", label: "סמן כהוצאה" },
+    { value: "income", label: "סמן כהכנסה" },
   ],
 };
 
@@ -158,11 +158,11 @@ export function TransactionsTable({
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <CardTitle className="font-serif text-2xl font-normal">
-            Transactions
+            תנועות
           </CardTitle>
           <div className="flex items-center gap-2">
             <Input
-              placeholder="Search..."
+              placeholder="חיפוש..."
               value={search}
               onChange={(e) => {
                 onSearchChange(e.target.value);
@@ -179,10 +179,10 @@ export function TransactionsTable({
               }}
             >
               <SelectTrigger className="h-8 w-[160px]">
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">כל הקטגוריות</SelectItem>
                 {(() => {
                   // Group children under their parents so the dropdown reads
                   // as a tree. Parents are bolded; children are indented.
@@ -264,8 +264,8 @@ export function TransactionsTable({
         ) : transactions.length === 0 ? (
           <div className="py-12 text-center text-sm text-muted-foreground">
             {search || categoryFilter
-              ? "No transactions match your filters."
-              : "No transactions yet. Click Sync Now to pull your data."}
+              ? "אין תנועות שמתאימות לסינון."
+              : "אין תנועות עדיין. לחץ סנכרון כדי למשוך נתונים."}
           </div>
         ) : (
           <>
@@ -273,11 +273,11 @@ export function TransactionsTable({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[32px]" />
-                  <TableHead className="w-[100px]">Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[150px]">Category</TableHead>
+                  <TableHead className="w-[100px]">תאריך</TableHead>
+                  <TableHead>תיאור</TableHead>
+                  <TableHead className="w-[150px]">קטגוריה</TableHead>
                   <TableHead className="w-[120px] text-right">
-                    Amount
+                    סכום
                   </TableHead>
                   <TableHead className="w-[40px]" />
                 </TableRow>
@@ -324,7 +324,7 @@ export function TransactionsTable({
                             }
                           >
                             <HelpCircle className="h-3 w-3" />
-                            Review
+                            לבדיקה
                             {txn.aiConfidence != null && (
                               <span className="ml-0.5 tabular-nums">
                                 {txn.aiConfidence}/7
@@ -342,7 +342,7 @@ export function TransactionsTable({
                         txn.installmentNumber &&
                         txn.installmentTotal && (
                           <div className="text-xs text-muted-foreground">
-                            Payment {txn.installmentNumber} of{" "}
+                            תשלום {txn.installmentNumber} מתוך{" "}
                             {txn.installmentTotal}
                           </div>
                         )}
@@ -367,7 +367,7 @@ export function TransactionsTable({
                                   : undefined
                               }
                             >
-                              {txn.categoryName ?? "Uncategorized"}
+                              {txn.categoryName ?? "לא מסווג"}
                             </Badge>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start">
@@ -399,10 +399,10 @@ export function TransactionsTable({
                                 "color-mix(in oklch, var(--status-on-track) 35%, transparent)",
                               color: "var(--status-on-track)",
                             }}
-                            title="Keep this category and remember it for next time"
+                            title="אשר את הקטגוריה וזכור לפעם הבאה"
                           >
                             <Check className="h-3 w-3" />
-                            Approve
+                            אשר
                           </Button>
                         )}
                       </div>
@@ -443,8 +443,8 @@ export function TransactionsTable({
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-4">
                 <span className="text-xs text-muted-foreground">
-                  {page * PAGE_SIZE + 1} to{" "}
-                  {Math.min((page + 1) * PAGE_SIZE, total)} of {total}
+                  {page * PAGE_SIZE + 1} עד{" "}
+                  {Math.min((page + 1) * PAGE_SIZE, total)} מתוך {total}
                 </span>
                 <div className="flex gap-1">
                   <Button
@@ -453,7 +453,7 @@ export function TransactionsTable({
                     onClick={() => onPageChange(page - 1)}
                     disabled={page === 0}
                   >
-                    Previous
+                    קודם
                   </Button>
                   <Button
                     variant="outline"
@@ -461,7 +461,7 @@ export function TransactionsTable({
                     onClick={() => onPageChange(page + 1)}
                     disabled={page >= totalPages - 1}
                   >
-                    Next
+                    הבא
                   </Button>
                 </div>
               </div>

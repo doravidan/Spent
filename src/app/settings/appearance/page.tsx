@@ -29,10 +29,10 @@ export default function AppearanceSettingsPage() {
 
   return (
     <SectionShell
-      title="Appearance"
+      title="מראה"
       description="Choose how Spent looks. System matches your OS setting and updates automatically."
     >
-      <SettingCard title="Theme">
+      <SettingCard title="ערכת נושא">
         <div className="grid gap-2 sm:grid-cols-3">
           {OPTIONS.map((o) => {
             const isActive = active === o.value;
